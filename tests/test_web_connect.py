@@ -191,3 +191,65 @@ def test_one_shops_state_cannot_connect_another(web, ctx, paypal, enabled) -> No
     first, second = draft(web), draft(web)
     connect(web, first, paypal)
     assert "Connected:" not in web.get(f"/m/{second}/review").text
+
+
+DETAILS = {
+    "name": "Oak Cart", "description": "Coffee", "pickup_location": "Oak St & 5th Ave, by the park",
+    "pickup_hours": "11am-3pm",
+}
+
+
+def test_post_connect_saves_details_and_redirects(web, ctx, enabled) -> None:
+    token = draft(web)
+    response = web.post(f"/m/{token}/paypal/connect", data=DETAILS)
+    assert response.status_code == 303
+    parsed = urlparse(response.headers["location"])
+    assert parsed.netloc == "www.sandbox.paypal.com" and parse_qs(parsed.query)["state"]
+    shop = ctx.catalog.get_by_admin_token(token)
+    assert (shop.name, shop.description) == ("Oak Cart", "Coffee")
+    assert (shop.pickup_location, shop.pickup_hours) == (DETAILS["pickup_location"], "11am-3pm")
+
+
+def test_saved_details_show_after_callback(web, paypal, enabled) -> None:
+    token = draft(web)
+    response = web.post(f"/m/{token}/paypal/connect", data=DETAILS)
+    state = parse_qs(urlparse(response.headers["location"]).query)["state"][0]
+    paypal.login_identity = PayPalIdentity(payer_id="PAYER12345", email="biz@example.com", verified_account=True)
+    assert web.get("/paypal/callback", params={"code": "AUTHCODE", "state": state}).status_code == 303
+    page = web.get(f"/m/{token}/review").text
+    assert "Oak St &amp; 5th Ave, by the park" in page and "11am-3pm" in page and "Oak Cart" in page
+
+
+def test_post_connect_published_or_bad_token_404(web, ctx, enabled) -> None:
+    assert web.post("/m/nope/paypal/connect", data=DETAILS).status_code == 404
+    token = draft(web)
+    confirm_all(ctx, token)
+    web.post(f"/m/{token}/publish", data=FORM)
+    assert web.post(f"/m/{token}/paypal/connect", data=DETAILS).status_code == 404
+    assert ctx.catalog.get_by_admin_token(token).pickup_location == FORM["pickup_location"]
+
+
+def test_post_connect_disabled_404(web) -> None:
+    assert web.post(f"/m/{draft(web)}/paypal/connect", data=DETAILS).status_code == 404
+
+
+def test_post_connect_overlong_rejected_and_not_saved(web, ctx, enabled) -> None:
+    token = draft(web)
+    before = ctx.catalog.get_by_admin_token(token)
+    response = web.post(f"/m/{token}/paypal/connect", data={**DETAILS, "pickup_hours": "x" * 81})
+    assert response.status_code == 422
+    assert "Pickup hours must be 80 characters or fewer." in response.text
+    after = ctx.catalog.get_by_admin_token(token)
+    assert (after.name, after.pickup_location, after.pickup_hours) == (
+        before.name, before.pickup_location, before.pickup_hours
+    )
+
+
+def test_connect_control_is_submit_button_with_formaction(web, enabled) -> None:
+    token = draft(web)
+    page = web.get(f"/m/{token}/review").text
+    button = re.search(r"<button[^>]*formaction=[^>]*>\s*Connect with PayPal", page)
+    assert button
+    tag = button.group(0)
+    assert f'formaction="/m/{token}/paypal/connect"' in tag
+    assert 'formmethod="post"' in tag and "formnovalidate" in tag and "btn btn-primary" in tag

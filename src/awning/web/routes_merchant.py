@@ -303,12 +303,8 @@ def _draft_for_connect(request: Request, token: str) -> Shop | None:
     return shop
 
 
-@router.get("/m/{token}/paypal/connect")
-def paypal_connect(request: Request, token: str) -> Response:
+def _start_paypal_connect(request: Request, shop: Shop) -> Response:
     ctx = _ctx(request)
-    shop = _draft_for_connect(request, token)
-    if shop is None:
-        return _not_found(request, "page")
     state = PayPalConnections(ctx.db).create_state(shop.id)
     query = urlencode(
         {
@@ -322,6 +318,30 @@ def paypal_connect(request: Request, token: str) -> Response:
         quote_via=quote,
     )
     return _no_store(RedirectResponse(f"{login_web_base(ctx.settings.paypal_base_url)}/connect?{query}", status_code=303))
+
+
+@router.get("/m/{token}/paypal/connect")
+def paypal_connect(request: Request, token: str) -> Response:
+    shop = _draft_for_connect(request, token)
+    if shop is None:
+        return _not_found(request, "page")
+    return _start_paypal_connect(request, shop)
+
+
+@router.post("/m/{token}/paypal/connect")
+async def paypal_connect_with_details(request: Request, token: str) -> Response:
+    shop = _draft_for_connect(request, token)
+    if shop is None:
+        return _not_found(request, "page")
+    data = await request.form()
+    form = {key: str(data.get(key) or "").strip() for key in SHOP_FIELD_LIMITS}
+    form.update(payee_merchant_id="", payee_email="", payee_email_confirmed=False)
+    if length_error := _field_length_error(form):
+        return _review_page(request, shop, form, length_error, 422)
+    _ctx(request).catalog.save_draft_details(
+        shop.id, form["name"], form["description"], form["pickup_location"], form["pickup_hours"]
+    )
+    return _start_paypal_connect(request, shop)
 
 
 @router.get("/paypal/callback")

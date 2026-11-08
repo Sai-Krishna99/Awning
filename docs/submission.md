@@ -27,7 +27,7 @@ Under the hood: Claude vision extracts items, prices and options, flagging anyth
 - Log in with PayPal for merchants: an OpenID Connect code flow whose `payer_id` becomes the shop's payee merchant ID.
 - An MCP App: a small read-only order status card in Claude.ai (items, total, pickup, live status). It has no payment controls; payment always happens in PayPal.
 - A live end-to-end test: real Claude orders through the hosted MCP connector, and a headless browser approves the payment in the sandbox.
-- An extraction eval harness with hand-labeled cases, 317 automated tests, and PayPal sandbox spike scripts that verified third-party capture, refund behavior and webhook delivery.
+- An extraction eval harness with hand-labeled cases, 323 automated tests, and PayPal sandbox spike scripts that verified third-party capture, refund behavior and webhook delivery.
 
 ### Challenges
 
