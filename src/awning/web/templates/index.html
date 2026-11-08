@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Awning | Your menu photo becomes a shop AI agents can buy from{% endblock %}
+{% block description %}Photograph a menu and get a shop that people and AI agents can order from, paid directly to you through PayPal.{% endblock %}
+{% block main_width %}max-w-5xl{% endblock %}
+{% block main_width_header %}max-w-5xl{% endblock %}
+{% block header_right %}
+<nav class="flex gap-4 text-sm font-semibold text-green" aria-label="Primary">
+  <a href="/directory" class="hover:underline">Directory</a>
+  <a href="/connect" class="hover:underline">Connect</a>
+</nav>
+{% endblock %}
+{% block content %}
+<section class="hero grid gap-8 lg:grid-cols-2 lg:items-center pt-2 pb-10 sm:pb-14">
+  <div>
+    <p class="text-sm font-semibold uppercase tracking-wide text-terracotta">Agentic commerce, for every counter</p>
+    <h1 class="mt-3 text-4xl sm:text-6xl font-bold text-green leading-[1.05]">Your menu photo becomes a shop AI agents can buy from.</h1>
+    <p class="mt-5 text-lg text-ink-soft">PayPal built the on-ramp to agentic commerce for merchants with a catalog. Awning is the on-ramp for merchants with a chalkboard.</p>
+    <div class="mt-7 flex flex-col sm:flex-row gap-3">
+      <a href="/start" class="btn btn-primary text-lg">Turn your menu into a shop</a>
+      <a href="/try" class="btn btn-ghost text-lg">Watch an agent order</a>
+    </div>
+  </div>
+  <div class="card p-5 sm:p-6" aria-hidden="true">
+    {% include "_steps_visual.html" %}
+  </div>
+</section>
+
+<section class="py-8 sm:py-10 border-t border-line" aria-labelledby="how-heading">
+  <h2 id="how-heading" class="text-3xl sm:text-4xl font-bold text-green">How it works</h2>
+  <ol class="mt-6 grid gap-4 md:grid-cols-3">
+    <li class="card p-5"><p class="step-num">1</p><h3 class="mt-3 text-xl font-bold text-green">Snap your menu</h3><p class="mt-2 text-ink-soft">A chalkboard, a handwritten card or a printed menu. One photo is enough.</p></li>
+    <li class="card p-5"><p class="step-num">2</p><h3 class="mt-3 text-xl font-bold text-green">Awning builds your shop</h3><p class="mt-2 text-ink-soft">AI reads the items and prices. You confirm anything it was unsure about, then publish.</p></li>
+    <li class="card p-5"><p class="step-num">3</p><h3 class="mt-3 text-xl font-bold text-green">Agents and people buy</h3><p class="mt-2 text-ink-soft">Orders arrive on your live board and PayPal pays you directly.</p></li>
+  </ol>
+</section>
+
+<section class="py-8 sm:py-10 border-t border-line" aria-labelledby="safe-heading">
+  <h2 id="safe-heading" class="text-3xl sm:text-4xl font-bold text-green">Built for agents, safe by design</h2>
+  <ul class="mt-6 grid gap-4 md:grid-cols-3">
+    <li class="card p-5"><h3 class="text-xl font-bold text-terracotta">Agents pick, Awning prices</h3><p class="mt-2 text-ink-soft">Prices are always computed by Awning from your menu. An agent only chooses items.</p></li>
+    <li class="card p-5"><h3 class="text-xl font-bold text-terracotta">Nothing moves until approval</h3><p class="mt-2 text-ink-soft">Nothing is charged until the buyer approves the payment in PayPal.</p></li>
+    <li class="card p-5"><h3 class="text-xl font-bold text-terracotta">Menu text is data</h3><p class="mt-2 text-ink-soft">Words in a menu photo are treated as data, never as instructions.</p></li>
+  </ul>
+</section>
+
+<section class="py-8 sm:py-10 border-t border-line" aria-labelledby="try-heading">
+  <h2 id="try-heading" class="text-3xl sm:text-4xl font-bold text-green">Try it three ways</h2>
+  <div class="mt-6 grid gap-4 md:grid-cols-3">
+    <a href="/start" class="card try-card p-5 block"><p class="text-sm font-semibold text-terracotta">For merchants</p><h3 class="mt-1 text-xl font-bold text-green">Turn your menu into a shop</h3><p class="mt-2 text-ink-soft">Upload a photo and go live in minutes.</p><p class="mt-4 font-semibold text-green">Start with a photo &rarr;</p></a>
+    <a href="/try" class="card try-card p-5 block"><p class="text-sm font-semibold text-terracotta">For the curious</p><h3 class="mt-1 text-xl font-bold text-green">Watch an agent shop</h3><p class="mt-2 text-ink-soft">See a built-in agent find a menu and place an order, tool call by tool call.</p><p class="mt-4 font-semibold text-green">Watch it order &rarr;</p></a>
+    <a href="/connect" class="card try-card p-5 block"><p class="text-sm font-semibold text-terracotta">For builders</p><h3 class="mt-1 text-xl font-bold text-green">Connect your assistant</h3><p class="mt-2 text-ink-soft">Add Awning to Claude.ai over MCP and order from a chat.</p><p class="mt-4 font-semibold text-green">Get the connector &rarr;</p></a>
+  </div>
+  <p class="mt-5 text-ink-soft">Or browse the demo storefront: <a class="underline text-green font-semibold" href="/s/marias-cart">Maria's Cart</a>.</p>
+</section>
+
+<section class="py-8 sm:py-10 border-t border-line" aria-labelledby="dir-heading">
+  <div class="flex items-end justify-between gap-4">
+    <h2 id="dir-heading" class="text-3xl sm:text-4xl font-bold text-green">Open on Awning</h2>
+    <a href="/directory" class="font-semibold text-green underline whitespace-nowrap">All shops</a>
+  </div>
+  {% if shops %}
+  <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for shop in shops %}{% include "_shop_card.html" %}{% endfor %}
+  </div>
+  {% else %}
+  <p class="mt-4 text-ink-soft">No shops yet. <a class="underline text-green font-semibold" href="/start">Publish the first one.</a></p>
+  {% endif %}
+</section>
+{% endblock %}

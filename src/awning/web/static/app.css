@@ -133,3 +133,12 @@ h1, h2, h3, .font-display { font-family: "Fraunces", Georgia, serif; font-optica
 .pay-card { padding: 1rem 1.1rem; border: 2px solid var(--terracotta); }
 .composer { position: sticky; bottom: 0; display: flex; gap: .5rem; padding: .75rem; background: #fff; border-top: 1px solid var(--line); border-radius: 0 0 1.25rem 1.25rem; }
 .composer .btn { flex: none; }
+
+.step-num {
+  display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem;
+  border-radius: 999px; background: var(--terracotta); color: #fff; font-weight: 700;
+}
+.shop-card, .try-card { transition: border-color .15s, transform .15s; }
+.try-card:hover, .shop-card:hover { border-color: var(--green); }
+.try-card:focus-visible, .shop-card:focus-visible { outline: 3px solid var(--terracotta); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .try-card:hover, .shop-card:hover { transform: translateY(-2px); } }

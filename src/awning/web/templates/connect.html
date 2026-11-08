@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Connect your AI assistant | Awning{% endblock %}
+{% block description %}Add Awning as a connector in Claude.ai and let your assistant find shops and place orders.{% endblock %}
+{% block content %}
+<section class="mb-8">
+  <h1 class="text-4xl sm:text-5xl font-bold text-green leading-tight">Connect your AI assistant</h1>
+  <p class="mt-3 text-lg text-ink-soft">Awning speaks MCP, so an assistant can find a shop, read its menu and place an order. You approve the payment in PayPal.</p>
+</section>
+
+<section class="card p-5 sm:p-6 mb-5" aria-labelledby="url-heading">
+  <h2 id="url-heading" class="text-2xl font-bold text-green">Connector URL</h2>
+  <div class="mt-3 flex flex-col sm:flex-row gap-2">
+    <input id="mcp-url" class="field copy-field" readonly value="{{ mcp_url }}" aria-label="Awning MCP URL" onfocus="this.select()">
+    <button id="copy-btn" type="button" class="btn btn-primary sm:flex-none">Copy URL</button>
+  </div>
+  <p id="copy-status" class="mt-2 text-sm text-ink-soft" role="status" aria-live="polite"></p>
+</section>
+
+<section class="card p-5 sm:p-6 mb-5" aria-labelledby="claude-heading">
+  <div class="flex items-center gap-3 flex-wrap">
+    <h2 id="claude-heading" class="text-2xl font-bold text-green">Claude.ai</h2>
+    <span class="badge badge-ai">Recommended</span>
+  </div>
+  <p class="text-sm text-ink-soft mt-1">Works on every plan, including Free (which allows one custom connector).</p>
+  <ol class="mt-4 grid gap-3 list-decimal pl-5 marker:font-semibold marker:text-terracotta">
+    <li>Open <strong>Customize</strong>, then <strong>Connectors</strong>, and choose <strong>Add custom connector</strong>.</li>
+    <li>Paste the URL above as the connector URL.</li>
+    <li>Choose <strong>No sign-in</strong> (no authentication). Awning needs no account.</li>
+    <li>In a chat, open <strong>+</strong>, then <strong>Connectors</strong>, and switch Awning on.</li>
+    <li>Ask for something. Try the prompt below.</li>
+  </ol>
+  <div class="mt-5 rounded-xl bg-cream border border-line p-4">
+    <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">Example prompt</p>
+    <p class="mt-1 font-display text-lg text-green">{{ example_prompt }}</p>
+  </div>
+</section>
+
+<section class="card p-5 sm:p-6 mb-5" aria-labelledby="chatgpt-heading">
+  <h2 id="chatgpt-heading" class="text-2xl font-bold text-green">ChatGPT</h2>
+  <p class="mt-2 text-ink-soft">ChatGPT can add the same URL, but tools that place orders appear limited to Business, Enterprise and Edu plans. On most plans it is read-only, so use Claude.ai to place an order.</p>
+</section>
+
+<section class="card p-5 sm:p-6 mb-5" aria-labelledby="tools-heading">
+  <h2 id="tools-heading" class="text-2xl font-bold text-green">What the assistant can do</h2>
+  <dl class="mt-3 divide-y divide-line">
+    {% for name, summary in tools %}
+    <div class="py-3 sm:flex gap-4">
+      <dt class="tool-name sm:w-48 flex-none">{{ name }}</dt>
+      <dd class="text-ink-soft mt-1 sm:mt-0">{{ summary }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+</section>
+
+<p class="text-ink-soft">No assistant handy? <a class="underline text-green font-semibold" href="/try">Watch the built-in agent shop instead</a>.</p>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById("copy-btn").addEventListener("click", async () => {
+    const input = document.getElementById("mcp-url");
+    const status = document.getElementById("copy-status");
+    try {
+      await navigator.clipboard.writeText(input.value);
+      status.textContent = "Copied.";
+    } catch (err) {
+      input.select();
+      status.textContent = "Press Ctrl+C or Cmd+C to copy.";
+    }
+  });
+</script>
+{% endblock %}
