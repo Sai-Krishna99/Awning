@@ -30,7 +30,13 @@
     <div class="awning-scallop"></div>
     <div class="mx-auto {% block main_width_header %}max-w-3xl{% endblock %} px-4 pt-5 flex items-center justify-between">
       <a href="/" class="font-display text-xl font-bold text-green tracking-tight">Awning</a>
-      {% block header_right %}{% endblock %}
+      {% block header_right %}
+      <nav class="flex gap-3 sm:gap-4 text-sm font-semibold text-green" aria-label="Primary">
+        <a href="/directory" class="hover:underline">Directory</a>
+        <a href="/start" class="hover:underline">Open a shop</a>
+        <a href="/connect" class="hover:underline">Connect</a>
+      </nav>
+      {% endblock %}
     </div>
   </header>
   {% block banner %}{% endblock %}

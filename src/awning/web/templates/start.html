@@ -21,6 +21,14 @@
   <button id="submit-btn" type="submit" class="btn btn-primary w-full mt-4 text-lg">Read my menu</button>
 </form>
 
+<form method="post" action="/start/sample" class="mt-6">
+  <p class="text-sm text-ink-soft">No menu handy? Try a sample:</p>
+  <div class="mt-2 flex flex-col sm:flex-row gap-2">
+    <button type="submit" name="sample" value="tacos" class="btn btn-ghost">Rosa's Taco Stand (AI-generated image)</button>
+    <button type="submit" name="sample" value="pizza" class="btn btn-ghost">Slice Corner Pizza (synthetic image)</button>
+  </div>
+</form>
+
 <section class="mt-10" aria-labelledby="next-heading">
   <h2 id="next-heading" class="text-2xl font-bold text-green">What happens next</h2>
   <ol class="mt-4 grid gap-3 sm:grid-cols-3">

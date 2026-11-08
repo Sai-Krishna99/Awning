@@ -1,5 +1,8 @@
-<a href="/s/{{ shop.slug }}" class="card shop-card block p-5 hover:border-green transition-colors">
-  <h3 class="text-xl font-bold text-green">{{ shop.name }}</h3>
-  {% if shop.description %}<p class="mt-1 text-sm text-ink-soft">{{ shop.description }}</p>{% endif %}
-  {% if shop.pickup_location %}<p class="mt-3 text-sm font-semibold">Pickup: <span class="font-medium text-ink-soft">{{ shop.pickup_location }}</span></p>{% endif %}
-</a>
+<div class="card shop-card p-5 hover:border-green transition-colors">
+  <a href="/s/{{ shop.slug }}" class="block">
+    <h3 class="text-xl font-bold text-green">{{ shop.name }}</h3>
+    {% if shop.description %}<p class="mt-1 text-sm text-ink-soft">{{ shop.description }}</p>{% endif %}
+    {% if shop.pickup_location %}<p class="mt-3 text-sm font-semibold">Pickup: <span class="font-medium text-ink-soft">{{ shop.pickup_location }}</span></p>{% endif %}
+  </a>
+  {% if shop.slug == demo_slug %}<a href="/s/{{ shop.slug }}/live" class="mt-3 block text-sm font-semibold text-green underline">Watch Maria's live order board</a>{% endif %}
+</div>
