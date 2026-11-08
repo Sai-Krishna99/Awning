@@ -4,7 +4,7 @@ from pathlib import Path
 from awning.catalog import Catalog
 from awning.models import ItemOption, MenuItem, Shop, ShopDetails
 
-DEFAULT_SEED_PATH = Path(__file__).resolve().parents[2] / "seed" / "marias-cart.json"
+DEFAULT_SEED_PATH = Path(__file__).resolve().parents[2] / "examples" / "marias-cart" / "menu.json"
 DEMO_SLUG = "marias-cart"
 
 
