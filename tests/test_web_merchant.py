@@ -12,6 +12,7 @@ from awning.extraction import (
     ExtractedItem, ExtractedMenu, ExtractedOption, ExtractionFailed, ExtractionResult, NoMenuFound,
 )
 from awning.models import MenuItem
+from awning.paypal import PayPalError
 from awning.orders import OrderService
 from awning.web.app import create_app
 from fakes import FakePayPal
@@ -104,7 +105,7 @@ def test_upload_creates_draft_and_redirects(web, ctx, stub) -> None:
 def test_upload_rejects_non_image(web, stub) -> None:
     response = upload(web, b"not an image")
     assert response.status_code == 400
-    assert "That file isn&#39;t a photo we can read" in response.text or "That file isn't a photo we can read" in response.text
+    assert "That file isn&#39;t a photo we can read — try a JPG or PNG." in response.text
     assert stub.calls == 0
 
 
@@ -122,7 +123,7 @@ def test_upload_no_menu_found(web, stub) -> None:
 def test_upload_model_trouble_is_friendly(web, stub, error) -> None:
     stub.error = error
     response = upload(web)
-    assert response.status_code in (422, 502)
+    assert response.status_code == (502 if isinstance(error, anthropic.APIError) else 422)
     assert "please try again" in response.text.lower()
 
 
@@ -200,7 +201,7 @@ def test_publish_rejects_invalid_merchant_id(web, ctx, paypal) -> None:
     paypal.payee_invalid = True
     response = web.post(f"/m/{token}/publish", data={**FORM, "payee_merchant_id": "BADMERCHANT1"})
     assert response.status_code == 422
-    assert "PayPal doesn&#39;t recognize that merchant ID." in response.text or "PayPal doesn't recognize that merchant ID." in response.text
+    assert "PayPal doesn&#39;t recognize that merchant ID." in response.text
     assert ctx.catalog.get_by_admin_token(token).status == "draft"
     assert 'value="BADMERCHANT1"' in response.text
 
@@ -238,7 +239,7 @@ def test_publish_without_payee_uses_demo(web, ctx) -> None:
     assert "http://localhost:8000/mcp" in page.text
     assert f"/m/{token}/board" in page.text
     assert f"/s/{shop.slug}/qr.svg" in page.text
-    assert "Save this page — it&#39;s your private admin link." in page.text or "Save this page — it's your private admin link." in page.text
+    assert "Save this page — it's your private admin link." in page.text
     assert web.get(f"/s/{shop.slug}").status_code == 200
     assert web.get(f"/m/{token}/review").status_code == 303
 
@@ -248,3 +249,65 @@ def test_publish_missing_name(web, ctx) -> None:
     confirm_all(ctx, token)
     response = web.post(f"/m/{token}/publish", data={**FORM, "name": " "})
     assert response.status_code == 422
+
+
+def test_upload_oversized_raw_image_is_too_large(web, stub) -> None:
+    response = upload(web, b"\0" * (15 * 1024 * 1024 + 1))
+    assert response.status_code == 413
+    assert "That photo is too large" in response.text
+    assert stub.calls == 0
+
+
+def test_upload_body_cap_rejects_before_parsing(web, stub) -> None:
+    response = upload(web, b"\0" * (17 * 1024 * 1024))
+    assert response.status_code == 413
+    assert "That photo is too large" in response.text
+    assert stub.calls == 0
+
+
+def test_upload_heic_reaches_extractor(web, stub) -> None:
+    from pillow_heif import register_heif_opener
+
+    register_heif_opener()
+    buffer = io.BytesIO()
+    Image.new("RGB", (400, 400), "white").save(buffer, "HEIF")
+    assert upload(web, buffer.getvalue(), "menu.heic").status_code == 303
+    assert stub.calls == 1
+
+
+def test_publish_malformed_merchant_id(web, ctx, paypal) -> None:
+    token = draft(web)
+    confirm_all(ctx, token)
+    response = web.post(f"/m/{token}/publish", data={**FORM, "payee_merchant_id": "bad id!"})
+    assert response.status_code == 422
+    assert "PayPal doesn&#39;t recognize that merchant ID." in response.text
+    assert paypal.calls_to("create_order") == []
+
+
+@pytest.mark.parametrize("error", [
+    PayPalError(500, "INTERNAL", [], None),
+    httpx.ConnectError("down"),
+])
+def test_publish_paypal_outage_is_friendly(web, ctx, paypal, error, monkeypatch) -> None:
+    token = draft(web)
+    confirm_all(ctx, token)
+
+    async def boom(**kwargs):
+        raise error
+
+    monkeypatch.setattr(paypal, "create_order", boom)
+    response = web.post(f"/m/{token}/publish", data={**FORM, "payee_merchant_id": "MERCHANT1"})
+    assert response.status_code == 422
+    assert "We couldn&#39;t reach PayPal to check that merchant ID" in response.text
+    assert ctx.catalog.get_by_admin_token(token).status == "draft"
+
+
+def test_item_name_cannot_break_out_of_script_block(web, ctx) -> None:
+    token = draft(web)
+    items = [i.model_dump() for i in ctx.catalog.get_by_admin_token(token).items]
+    items[0]["name"] = "</script><script>alert(1)</script>"
+    assert web.put(f"/api/m/{token}/items", json={"items": items}).status_code == 200
+    page = web.get(f"/m/{token}/review").text
+    config = page.split('id="review-config" type="application/json">')[1].split("</script>")[0]
+    assert "<" not in config and "\\u003c/script\\u003e" in config
+    assert "alert(1)" not in page.replace(config, "")

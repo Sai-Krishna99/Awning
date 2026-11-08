@@ -5,7 +5,10 @@ from datetime import datetime, timezone
 
 import anthropic
 import httpx
+from collections.abc import Callable
+
 from fastapi import APIRouter, Request, UploadFile
+from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, ValidationError
 
@@ -18,7 +21,27 @@ from awning.paypal import PayPalError
 from awning.web.routes_shop import _ctx, _not_found, templates
 
 logger = logging.getLogger(__name__)
+MAX_UPLOAD_BODY_BYTES = MAX_RAW_BYTES + 1024 * 1024
+TOO_LARGE_MESSAGE = "That photo is too large — please upload one under 15 MB."
+
+
+class UploadSizeGuardRoute(APIRoute):
+    """Rejects oversized bodies from the Content-Length header before the multipart form is parsed."""
+
+    def get_route_handler(self) -> Callable:
+        original = super().get_route_handler()
+
+        async def handler(request: Request) -> Response:
+            declared = request.headers.get("content-length", "")
+            if declared.isdigit() and int(declared) > MAX_UPLOAD_BODY_BYTES:
+                return _start_page(request, 413, TOO_LARGE_MESSAGE)
+            return await original(request)
+
+        return handler
+
+
 router = APIRouter()
+upload_router = APIRouter(route_class=UploadSizeGuardRoute)
 
 MERCHANT_ID_PATTERN = re.compile(r"^[A-Za-z0-9]{5,20}$")
 PUBLISH_ERRORS = {
@@ -58,14 +81,18 @@ def start_page(request: Request) -> Response:
     return _start_page(request)
 
 
-@router.post("/start")
+@upload_router.post("/start")
 async def start_upload(request: Request, photo: UploadFile) -> Response:
     ctx = _ctx(request)
     raw = await photo.read(MAX_RAW_BYTES + 1)
     try:
         image = prepare_image(raw)
-    except ImageRejected:
+    except ImageRejected as exc:
+        if exc.reason == "too_large":
+            return _start_page(request, 413, TOO_LARGE_MESSAGE)
         return _start_page(request, 400, "That file isn't a photo we can read — try a JPG or PNG.")
+    # Behind Render's proxy uvicorn runs with --forwarded-allow-ips='*' (render.yaml startCommand),
+    # so request.client.host is the real client address, not the proxy.
     client_ip = request.client.host if request.client else "unknown"
     if not (ctx.upload_limiter_ip.allow(client_ip) and ctx.upload_limiter_global.allow("global")):
         return _start_page(request, 429, "You've reached the upload limit for now — please try again later.")
@@ -231,3 +258,6 @@ def published_page(request: Request, token: str) -> Response:
         },
     )
     return _no_store(response)
+
+
+router.include_router(upload_router)
