@@ -70,3 +70,32 @@ def test_mcp_host_check_allows_configured_hosts(tmp_path) -> None:
 def test_healthz_still_works_with_mcp_mounted(client: TestClient) -> None:
     with client:
         assert client.get("/healthz").status_code == 200
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected_ok"),
+    [
+        (None, True),
+        ("https://chatgpt.com", True),
+        ("https://claude.ai", True),
+        ("http://localhost:6274", True),
+        ("https://evil.example", False),
+    ],
+)
+def test_mcp_origin_check(client: TestClient, origin: str | None, expected_ok: bool) -> None:
+    headers = dict(HEADERS)
+    if origin:
+        headers["Origin"] = origin
+    with client:
+        status = client.post("/mcp", json=INIT, headers=headers).status_code
+    assert (status != 403) is expected_ok
+
+
+async def test_mcp_malformed_items_reports_field(ctx: AppContext, shop: Shop) -> None:
+    async with Client(build_mcp(ctx)) as client:
+        result = await client.call_tool(
+            "create_order",
+            {"shop_slug": shop.slug, "items": [{"item_id": "x"}], "pickup_time": "8am", "customer_name": "Ann"},
+        )
+        assert result.is_error
+        assert "quantity" in result.content[0].text

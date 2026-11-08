@@ -5,7 +5,7 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError as McpToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from awning import tools
 from awning.context import AppContext
@@ -48,9 +48,9 @@ class MenuResult(BaseModel):
 
 
 class OrderLineIn(BaseModel):
-    item_id: str
+    item_id: str = Field(min_length=1)
     option_ids: list[str] = []
-    quantity: int
+    quantity: int = Field(ge=1, le=20)
 
 
 class OrderLineOut(BaseModel):
@@ -102,7 +102,16 @@ def allowed_hosts_for(configured: list[str]) -> list[str]:
 
 def build_transport_security(ctx: AppContext) -> TransportSecuritySettings:
     public = urlparse(ctx.settings.public_url)
-    origins = ["https://claude.ai", f"{public.scheme}://{public.netloc}"]
+    origins = [
+        f"{public.scheme}://{public.netloc}",
+        "https://claude.ai",
+        "https://www.claude.ai",
+        "https://claude.com",
+        "https://chatgpt.com",
+        "https://chat.openai.com",
+        "http://localhost:*",
+        "http://127.0.0.1:*",
+    ]
     return TransportSecuritySettings(
         allowed_hosts=allowed_hosts_for(ctx.settings.allowed_hosts), allowed_origins=origins
     )
