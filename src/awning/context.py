@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from anthropic import AsyncAnthropic
 
@@ -9,6 +9,7 @@ from awning.events import EventBus
 from awning.extraction import MenuExtractor
 from awning.orders import OrderService
 from awning.paypal import PayPalClient
+from awning.ratelimit import RateLimiter
 
 
 @dataclass
@@ -20,6 +21,8 @@ class AppContext:
     events: EventBus
     orders: OrderService
     extractor: MenuExtractor
+    upload_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(5, 3600))
+    upload_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(200, 86400))
 
 
 def build_context(settings: Settings) -> AppContext:

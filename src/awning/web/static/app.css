@@ -69,3 +69,24 @@ h1, h2, h3, .font-display { font-family: "Fraunces", Georgia, serif; font-optica
   .pulse { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .45; } }
 }
+
+.dropzone { border: 2px dashed var(--terracotta); background: #fff; transition: background .15s; }
+.dropzone:hover, .dropzone.dragging { background: var(--cream-deep); }
+.dropzone:focus-within { outline: 3px solid var(--terracotta); outline-offset: 2px; }
+.loading-overlay {
+  position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+  background: rgba(251, 247, 240, .92);
+}
+.loading-overlay.hidden { display: none; }
+.copy-field { font-family: ui-monospace, monospace; font-size: .9rem; }
+
+.review-grid { height: min(62vh, 560px); min-height: 340px; width: 100%; }
+.review-grid .cell-flagged { background: #FBE9E3 !important; box-shadow: inset 3px 0 0 var(--terracotta); }
+.review-grid .cell-flagged.cell-missing { background: #F6D2C8 !important; }
+.review-grid .cell-error { background: #FEE2E2 !important; outline: 2px solid #DC2626; outline-offset: -2px; }
+.review-grid .confirm-btn {
+  min-height: 34px; padding: 0 .9rem; border-radius: 999px; background: var(--terracotta); color: #fff;
+  font-weight: 600; font-size: .85rem;
+}
+.review-grid .confirm-btn:hover { background: var(--terracotta-deep); }
+.review-grid .ok-mark { color: var(--green); font-weight: 600; font-size: .85rem; }

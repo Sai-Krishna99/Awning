@@ -83,7 +83,11 @@ class Catalog:
         self.db = db
 
     def create_draft(
-        self, items: list[MenuItem], name_guess: str | None = None, hours_guess: str | None = None
+        self,
+        items: list[MenuItem],
+        name_guess: str | None = None,
+        hours_guess: str | None = None,
+        suspicious_text: list[str] | None = None,
     ) -> Shop:
         shop_id = new_id("shop")
         token = new_admin_token()
@@ -91,14 +95,20 @@ class Catalog:
         items_json = json.dumps([i.model_dump() for i in _assign_ids(items)])
         self.db.conn.execute(
             "INSERT INTO shops (id, slug, admin_token, status, name, description, pickup_location, pickup_hours,"
-            " items_json, created_at) VALUES (?, NULL, ?, 'draft', ?, '', '', ?, ?, ?)",
-            (shop_id, token, name_guess or "", hours_guess or "", items_json, now),
+            " items_json, created_at, suspicious_json)"
+            " VALUES (?, NULL, ?, 'draft', ?, '', '', ?, ?, ?, ?)",
+            (shop_id, token, name_guess or "", hours_guess or "", items_json, now,
+             json.dumps(suspicious_text or [])),
         )
         self.db.conn.commit()
         return self._one("id = ?", (shop_id,))
 
     def get_by_admin_token(self, token: str) -> Shop | None:
         return self._one("admin_token = ?", (token,))
+
+    def get_suspicious_text(self, shop_id: str) -> list[str]:
+        row = self.db.conn.execute("SELECT suspicious_json FROM shops WHERE id = ?", (shop_id,)).fetchone()
+        return json.loads(row["suspicious_json"]) if row else []
 
     def get_by_id(self, shop_id: str) -> Shop | None:
         return self._one("id = ?", (shop_id,))

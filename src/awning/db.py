@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS shops (
     payee_email TEXT,
     items_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    published_at TEXT
+    published_at TEXT,
+    suspicious_json TEXT NOT NULL DEFAULT '[]'
 );
 CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
@@ -52,4 +53,7 @@ class Database:
 
     def init_schema(self) -> None:
         self.conn.executescript(SCHEMA)
+        columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(shops)")}
+        if "suspicious_json" not in columns:
+            self.conn.execute("ALTER TABLE shops ADD COLUMN suspicious_json TEXT NOT NULL DEFAULT '[]'")
         self.conn.commit()
