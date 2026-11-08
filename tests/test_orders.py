@@ -153,6 +153,33 @@ async def test_refresh_captures_when_approved(ctx, service, paypal) -> None:
     assert (await service.refresh_from_paypal(order.id)).status == "paid"
 
 
+async def test_refresh_on_completed_marks_paid_exactly_once(ctx, service, paypal, events) -> None:
+    order = await place(service, make_shop(ctx))
+    paypal.order_statuses[order.paypal_order_id] = "COMPLETED"
+    published: list[str] = []
+    original = events.publish
+    events.publish = lambda shop_id, event: (published.append(event["type"]), original(shop_id, event))
+    first = await service.refresh_from_paypal(order.id)
+    second = await service.refresh_from_paypal(order.id)
+    assert first.status == second.status == "paid"
+    assert first.capture_id == "CAP-PPORDER1"
+    assert paypal.capture_count == 1
+    assert published == ["order_paid"]
+
+
+async def test_pending_capture_marks_order_held_until_completed(ctx, service, paypal) -> None:
+    order = await place(service, make_shop(ctx))
+    assert order.payment_held is False
+    paypal.capture_status = "PENDING"
+    with pytest.raises(PaymentNotCompleted):
+        await service.complete_payment(order.id)
+    held = service.get(order.id)
+    assert held.status == "awaiting_payment" and held.payment_held is True and held.capture_id is None
+    paypal.capture_status = "COMPLETED"
+    paid = await service.complete_payment(order.id)
+    assert paid.status == "paid" and paid.payment_held is False
+
+
 async def test_refund_rules(ctx, paypal, events) -> None:
     service = make_service(ctx, paypal, events)
     demo = make_shop(ctx)

@@ -108,6 +108,23 @@ async def test_capture_already_captured_is_idempotent():
     assert result.payee_merchant_id == "M1"
 
 
+async def test_capture_without_capture_object_is_not_completed():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(201, json={"id": "PP1", "status": "COMPLETED", "purchase_units": [{}]})
+
+    client, _ = make_client(handler)
+    result = await client.capture_order("PP1", request_key="k")
+    assert result.status != "COMPLETED"
+    assert result.capture_id is None
+
+
+async def test_brand_name_truncated_to_paypal_limit():
+    client, seen = make_client(order_response)
+    await create(client, brand_name="B" * 200)
+    ctx = json.loads(seen[-1].content)["payment_source"]["paypal"]["experience_context"]
+    assert ctx["brand_name"] == "B" * 127
+
+
 async def test_capture_sends_request_id():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(201, json={"id": "PP1", "status": "COMPLETED", "purchase_units": [{

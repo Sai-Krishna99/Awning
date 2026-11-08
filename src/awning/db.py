@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS orders (
     approval_url TEXT,
     capture_id TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    payment_held INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS extractions (
     id TEXT PRIMARY KEY,
@@ -56,4 +57,7 @@ class Database:
         columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(shops)")}
         if "suspicious_json" not in columns:
             self.conn.execute("ALTER TABLE shops ADD COLUMN suspicious_json TEXT NOT NULL DEFAULT '[]'")
+        order_columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(orders)")}
+        if "payment_held" not in order_columns:
+            self.conn.execute("ALTER TABLE orders ADD COLUMN payment_held INTEGER NOT NULL DEFAULT 0")
         self.conn.commit()

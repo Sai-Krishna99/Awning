@@ -5,10 +5,12 @@ from awning.config import load_settings
 from awning.context import AppContext, build_context
 from awning.models import MenuItem, Shop, ShopDetails
 from awning.orders import OrderService
+from awning.paypal import PayPalError
 from awning.web.app import create_app
 from fakes import FakePayPal
 
 FOOTER = "Sandbox demo: every payment is a real PayPal sandbox transaction. No real money moves."
+HELD = "PayPal is holding this payment for the merchant to accept."
 BANNER = "Demo merchant — payments go to Awning's PayPal sandbox demo account."
 
 
@@ -154,10 +156,24 @@ def test_return_twice_captures_once(web, shop, paypal):
 
 def test_return_not_completed_renders_confirming_not_500(web, shop, paypal):
     order_id = place(web, shop)["order_id"]
-    paypal.capture_status = "PENDING"
+    paypal.capture_error = PayPalError(500, "INTERNAL_SERVER_ERROR", [], None)
     resp = web.get(f"/o/{order_id}/return", follow_redirects=True)
     assert resp.status_code == 200
     assert "confirming your payment" in resp.text
+
+
+def test_pending_capture_shows_holding_message_and_stops_polling(web, shop, paypal):
+    order_id = place(web, shop)["order_id"]
+    paypal.capture_status = "PENDING"
+    resp = web.get(f"/o/{order_id}/return", follow_redirects=True)
+    assert resp.status_code == 200
+    assert HELD in resp.text
+    assert "confirming your payment" not in resp.text
+    assert "Continue to PayPal" not in resp.text
+    assert 'data-held="true"' in resp.text
+    body = web.get(f"/api/orders/{order_id}").json()
+    assert body["status"] == "awaiting_payment"
+    assert body["payment_held"] is True and body["message"] == HELD
 
 
 def test_capture_api(web, shop, paypal):
@@ -184,7 +200,7 @@ def test_order_status_api(web, shop, paypal):
     body = web.get(f"/api/orders/{order_id}").json()
     assert body == {
         "order_id": order_id, "status": "awaiting_payment", "total": "9.00",
-        "pickup_time": "8:15", "shop_name": "Maria's Cart",
+        "pickup_time": "8:15", "shop_name": "Maria's Cart", "payment_held": False,
     }
     paypal.order_statuses["PPORDER1"] = "APPROVED"
     assert web.get(f"/api/orders/{order_id}").json()["status"] == "paid"

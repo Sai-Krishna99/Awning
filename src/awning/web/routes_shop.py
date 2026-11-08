@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from awning.context import AppContext
 from awning.models import Order, OrderLineRequest, Shop
 from awning.orders import (
+    PAYMENT_HELD_MESSAGE,
     OrderCreationFailed,
     OrderInputError,
     OrderNotFound,
@@ -167,15 +168,18 @@ async def order_status(request: Request, order_id: str) -> Response:
     except OrderNotFound:
         return _error(404, "order_not_found", f"No order with id '{order_id}'.")
     shop = ctx.catalog.get_by_id(order.shop_id)
-    return JSONResponse(
-        {
-            "order_id": order.id,
-            "status": order.status,
-            "total": format_cents(order.total_cents),
-            "pickup_time": order.pickup_time,
-            "shop_name": shop.name if shop else "",
-        }
-    )
+    held = _is_held(order)
+    body = {
+        "order_id": order.id,
+        "status": order.status,
+        "total": format_cents(order.total_cents),
+        "pickup_time": order.pickup_time,
+        "shop_name": shop.name if shop else "",
+        "payment_held": held,
+    }
+    if held:
+        body["message"] = PAYMENT_HELD_MESSAGE
+    return JSONResponse(body)
 
 
 @router.get("/o/{order_id}/return")
@@ -189,6 +193,10 @@ async def payment_return(request: Request, order_id: str) -> Response:
     except PaymentNotCompleted:
         target += "?returned=1"
     return RedirectResponse(target, status_code=303)
+
+
+def _is_held(order: Order) -> bool:
+    return order.status == "awaiting_payment" and order.payment_held
 
 
 def _order_and_shop(request: Request, order_id: str) -> tuple[Order, Shop] | None:
@@ -221,5 +229,7 @@ def order_page(request: Request, order_id: str, returned: int = 0) -> Response:
             "shop": shop,
             "returned": bool(returned),
             "status_label": STATUS_LABELS[order.status],
+            "held": _is_held(order),
+            "held_message": PAYMENT_HELD_MESSAGE,
         },
     )

@@ -4,6 +4,7 @@ from awning import tools
 from awning.context import AppContext
 from awning.models import ItemOption, MenuItem, Shop, ShopDetails
 from awning.orders import OrderService
+from awning.paypal import PayPalError
 from awning.tools import ToolError
 from fakes import FakePayPal
 
@@ -138,11 +139,22 @@ async def test_get_order_status_capture_failure_still_awaiting(ctx: AppContext, 
     created = await tools.create_order(ctx, **order_args(shop))
     order = ctx.orders.get(created["order_id"])
     paypal.order_statuses[order.paypal_order_id] = "APPROVED"
-    paypal.capture_status = "PENDING"
+    paypal.capture_error = PayPalError(500, "INTERNAL_SERVER_ERROR", [], None)
     status = await tools.get_order_status(ctx, created["order_id"])
     assert status["status"] == "awaiting_payment"
     assert status["approval_url"] == created["approval_url"]
     assert "not completed" in status["message"]
+
+
+async def test_get_order_status_reports_held_payment(ctx: AppContext, shop: Shop, paypal: FakePayPal) -> None:
+    created = await tools.create_order(ctx, **order_args(shop))
+    order = ctx.orders.get(created["order_id"])
+    paypal.order_statuses[order.paypal_order_id] = "APPROVED"
+    paypal.capture_status = "PENDING"
+    status = await tools.get_order_status(ctx, created["order_id"])
+    assert status["status"] == "awaiting_payment"
+    assert status["message"] == "PayPal is holding this payment for the merchant to accept."
+    assert "approval_url" not in status
 
 
 async def test_get_order_status_unknown(ctx: AppContext) -> None:

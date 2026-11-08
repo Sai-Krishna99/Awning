@@ -12,6 +12,8 @@ PAYEE_INVALID_ISSUE = "PAYEE_ACCOUNT_INVALID"
 ALREADY_CAPTURED_ISSUE = "ORDER_ALREADY_CAPTURED"
 TOKEN_EXPIRY_MARGIN_SECONDS = 60
 CURRENCY = "USD"
+NO_CAPTURE_STATUS = "NO_CAPTURE"
+MAX_TEXT = 127
 
 
 @dataclass
@@ -48,7 +50,7 @@ def _money(cents: int) -> dict:
 
 def _item_name(name: str, option_names: list[str]) -> str:
     full = f"{name} ({', '.join(option_names)})" if option_names else name
-    return full[:127]
+    return full[:MAX_TEXT]
 
 
 def _approval_url(links: list[dict]) -> str | None:
@@ -60,10 +62,11 @@ def _capture_result(order: dict) -> CaptureResult:
     unit = (order.get("purchase_units") or [{}])[0]
     captures = unit.get("payments", {}).get("captures") or []
     capture = captures[0] if captures else {}
+    capture_id = capture.get("id")
     payee = unit.get("payee") or {}
     return CaptureResult(
-        status=capture.get("status") or order.get("status", ""),
-        capture_id=capture.get("id"),
+        status=(capture.get("status") or "") if capture_id else NO_CAPTURE_STATUS,
+        capture_id=capture_id,
         payee_email=payee.get("email_address"),
         payee_merchant_id=payee.get("merchant_id"),
     )
@@ -147,7 +150,7 @@ class PayPalClient:
         unit: dict = {
             "reference_id": reference_id,
             "custom_id": reference_id,
-            "description": description[:127],
+            "description": description[:MAX_TEXT],
             "items": [
                 {
                     "name": _item_name(line.name, line.option_names),
@@ -171,7 +174,7 @@ class PayPalClient:
             "payment_source": {
                 "paypal": {
                     "experience_context": {
-                        "brand_name": brand_name,
+                        "brand_name": brand_name[:MAX_TEXT],
                         "shipping_preference": "NO_SHIPPING",
                         "user_action": "PAY_NOW",
                         "return_url": return_url,

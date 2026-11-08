@@ -104,5 +104,6 @@ class Order(BaseModel):
     paypal_order_id: str | None
     approval_url: str | None
     capture_id: str | None
+    payment_held: bool = False
     created_at: datetime
     updated_at: datetime

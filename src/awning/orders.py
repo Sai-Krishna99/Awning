@@ -16,6 +16,8 @@ _PAYPAL_ERRORS = (PayPalError, httpx.HTTPError)
 from awning.pricing import format_cents, price_order
 
 _POST_PAYMENT = ("paid", "ready", "picked_up")
+_CAPTURABLE_PAYPAL_STATUSES = ("APPROVED", "COMPLETED")
+PAYMENT_HELD_MESSAGE = "PayPal is holding this payment for the merchant to accept."
 _TRANSITIONS = {"ready": "paid", "picked_up": "ready"}
 
 
@@ -160,8 +162,11 @@ class OrderService:
             except (PayPalError, httpx.HTTPError) as exc:
                 raise PaymentNotCompleted(f"capture failed: {type(exc).__name__}") from exc
             if result.status != "COMPLETED":
+                held = result.status == "PENDING"
+                if held != order.payment_held:
+                    self._update(order_id, payment_held=int(held))
                 raise PaymentNotCompleted(f"capture status {result.status}")
-            self._update(order_id, status="paid", capture_id=result.capture_id)
+            self._update(order_id, status="paid", capture_id=result.capture_id, payment_held=0)
             order = self.get(order_id)
             self._publish(order, "order_paid")
             return order
@@ -174,7 +179,9 @@ class OrderService:
             paypal_order = await self.paypal.get_order(order.paypal_order_id)
         except _PAYPAL_ERRORS:
             return order
-        if paypal_order.get("status") == "APPROVED":
+        # COMPLETED means a capture already exists (a lost capture response or a pending capture);
+        # complete_payment recovers it through the ORDER_ALREADY_CAPTURED path.
+        if paypal_order.get("status") in _CAPTURABLE_PAYPAL_STATUSES:
             return await self.complete_payment(order_id)
         return order
 
@@ -272,7 +279,7 @@ class OrderService:
         self._shop_for(order, admin_token)
         return order
 
-    def _update(self, order_id: str, **fields: str | None) -> None:
+    def _update(self, order_id: str, **fields: str | int | None) -> None:
         assignments = ", ".join(f"{name} = ?" for name in fields)
         self.db.conn.execute(
             f"UPDATE orders SET {assignments}, updated_at = ? WHERE id = ?",
@@ -298,6 +305,7 @@ class OrderService:
             paypal_order_id=row["paypal_order_id"],
             approval_url=row["approval_url"],
             capture_id=row["capture_id"],
+            payment_held=bool(row["payment_held"]),
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )

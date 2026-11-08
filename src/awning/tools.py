@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from awning.models import Channel, MenuItem, OrderLineRequest, Shop
 from awning.orders import (
+    PAYMENT_HELD_MESSAGE,
     OrderCreationFailed,
     OrderInputError,
     OrderNotFound,
@@ -145,7 +146,9 @@ async def get_order_status(ctx: AppContext, order_id: str) -> dict:
         "pickup_time": order.pickup_time,
         "total": format_cents(order.total_cents),
     }
-    if order.status == "awaiting_payment":
+    if order.status == "awaiting_payment" and order.payment_held:
+        result["message"] = PAYMENT_HELD_MESSAGE
+    elif order.status == "awaiting_payment":
         result["approval_url"] = order.approval_url
         result["message"] = AWAITING_MESSAGE
     else:
