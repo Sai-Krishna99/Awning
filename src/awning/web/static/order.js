@@ -30,7 +30,6 @@
           window.location.replace("/o/" + encodeURIComponent(orderId));
           return;
         }
-        if (body.payment_held) return; // PayPal is holding the payment for the merchant; stop polling.
       }
     } catch (err) {
       /* try again on the next tick */
