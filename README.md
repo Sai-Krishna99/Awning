@@ -200,6 +200,13 @@ uv run pytest            # 323 tests, no network or keys needed
 
 `.env.example` lists every setting. At minimum: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_PLATFORM_MERCHANT_ID`, `ANTHROPIC_API_KEY`. `PAYPAL_WEBHOOK_ID` is needed only to accept webhooks, and `PAYPAL_DEMO_PAYEE_*` only to send Maria's Cart's payments to its separate sandbox merchant account. Run the extraction eval with `uv run python -m eval.run_eval --models claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5 --cases eval/cases` (prefix with `env -u ANTHROPIC_BASE_URL` only if that variable is set in your shell).
 
+**Live end-to-end check.** `scripts/live_e2e.py` runs the whole buyer path against the hosted app: real Claude (Haiku, via the Anthropic API's MCP connector) finds Maria's Cart through `/mcp` and places an order, a headless browser logs in as the sandbox buyer and approves it in PayPal, the server confirms the order is paid, and Claude checks the status. It needs `ANTHROPIC_API_KEY`, `PAYPAL_SANDBOX_BUYER_EMAIL` and `PAYPAL_SANDBOX_BUYER_PASSWORD` in `.env`, and costs about a quarter of a cent per run.
+
+```
+uv run --with playwright playwright install chromium
+uv run --with playwright python scripts/live_e2e.py
+```
+
 ## Project structure
 
 ```
@@ -219,6 +226,7 @@ eval/              extraction eval harness, cases, results
 tests/             pytest suite
 docs/              architecture, video script, submission, research
 examples/          fictional demo merchant and sample menus to upload
+scripts/           live end-to-end check and PayPal sandbox spikes
 render.yaml        Render deployment
 ```
 

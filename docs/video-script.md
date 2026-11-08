@@ -8,7 +8,7 @@ Fictional shops: Maria's Cart (seeded demo) and Rosa's Taco Stand (onboarded on 
 
 ### 1. Hook, 0:00-0:14 (hand-recorded Claude.ai clip)
 
-Shot: Claude.ai chat with the Awning connector. Ask "Order a latte from Maria's Cart for 9am pickup, name Sam." The order card appears. Open the PayPal link, log in as the sandbox buyer, approve. Back in Claude, the card changes to Paid. Waits are sped up and labeled.
+Shot: Claude.ai chat with the Awning connector. Ask "Order me a latte for tomorrow morning at 8:30 as a pickup from Maria's cart" (as recorded). The order card appears. Open the PayPal link, log in as the sandbox buyer, approve. Back in Claude, the card changes to Paid. Waits are sped up and labeled.
 
 Narration: "I ask Claude for a latte from Maria's Cart, a coffee cart with no website. Claude places the order, I approve it in PayPal, and the money goes straight to Maria."
 
@@ -37,7 +37,7 @@ Narration: "Three people are involved. The shopper adds Awning to their AI once,
 
 | Shot | Narration |
 |---|---|
-| `/try`: "Two carne asada tacos from Rosa's Taco Stand for noon, name Lee." Tool calls appear one by one. | "A shopper asks an AI assistant for two tacos. It finds Rosa's stand, reads the menu and creates the order. It only picks items. Awning sets the prices." |
+| `/try`: "Two carne asada tacos from Rosa's Taco Stand for noon pickup, name Lee. No extras, go ahead and place it." (as recorded) Tool calls appear one by one. | "A shopper asks an AI assistant for two tacos. It finds Rosa's stand, reads the menu and creates the order. It only picks items. Awning sets the prices." |
 | PayPal sandbox approval, then the order page showing Paid, with Rosa's board updating beside it (chime added in editing; the board really plays it). | "The shopper approves in PayPal, and Rosa's board chimes with the paid order." |
 
 ### 6. Safe by design, 2:10-2:28 (landing page section)
