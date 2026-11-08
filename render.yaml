@@ -18,7 +18,7 @@ services:
       - key: AWNING_EXTRACTION_MODEL
         value: claude-opus-5-5
       - key: AWNING_AGENT_MODEL
-        value: claude-opus-5-5
+        value: claude-haiku-5-5
       - key: AWNING_EXTRACTION_EFFORT
         value: low
       - key: AWNING_AGENT_EFFORT
