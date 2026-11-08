@@ -54,7 +54,7 @@
     {% else %}
     {% if paypal_login_enabled %}
     <div>
-      <a href="/m/{{ shop.admin_token }}/paypal/connect" class="btn btn-primary">Connect with PayPal</a>
+      <button type="submit" id="connect-btn" formaction="/m/{{ shop.admin_token }}/paypal/connect" formmethod="post" formnovalidate class="btn btn-primary">Connect with PayPal</button>
       <p class="text-xs text-ink-soft mt-1">Log in to PayPal with a Business account. We never see your password.</p>
     </div>
     <p class="text-sm text-ink-soft">Or enter your merchant ID</p>

@@ -255,9 +255,11 @@
 
   $("publish-form").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const connecting = event.submitter && event.submitter.id === "connect-btn";
     const button = $("publish-btn");
-    button.disabled = true;
+    if (!connecting) button.disabled = true;
     if (await save()) {
+      if (connecting) event.target.action = event.submitter.formAction;
       event.target.submit();
     } else {
       refreshState();

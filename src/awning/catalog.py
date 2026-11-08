@@ -124,6 +124,16 @@ class Catalog:
         self.db.conn.commit()
         return self._one("id = ?", (shop.id,))
 
+    def save_draft_details(
+        self, shop_id: str, name: str, description: str, pickup_location: str, pickup_hours: str
+    ) -> None:
+        self.db.conn.execute(
+            "UPDATE shops SET name = ?, description = ?, pickup_location = ?, pickup_hours = ?"
+            " WHERE id = ? AND status = 'draft'",
+            (name, description, pickup_location, pickup_hours, shop_id),
+        )
+        self.db.conn.commit()
+
     def publish(self, admin_token: str, details: ShopDetails) -> Shop:
         shop = self._require(admin_token)
         if shop.status == "published":
