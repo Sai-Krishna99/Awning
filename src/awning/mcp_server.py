@@ -2,7 +2,6 @@ import json
 from urllib.parse import urlparse
 
 from mcp.server import MCPServer
-from mcp.server.mcpserver.context import Context
 from mcp.server.mcpserver.exceptions import ToolError as McpToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
@@ -91,12 +90,6 @@ def _raise(exc: tools.ToolError) -> McpToolError:
     return McpToolError(text)
 
 
-def _client_ip(context: Context) -> str | None:
-    """The HTTP client address when the tool call arrived over HTTP; None for in-memory or stdio calls."""
-    client = getattr(context.request_context.request, "client", None)
-    return client.host if client else None
-
-
 def allowed_hosts_for(configured: list[str]) -> list[str]:
     hosts: list[str] = ["testserver"]
     for entry in configured:
@@ -155,10 +148,11 @@ def build_mcp(ctx: AppContext) -> MCPServer:
         items: list[OrderLineIn],
         pickup_time: str,
         customer_name: str,
-        context: Context,
         note: str = "",
     ) -> CreateOrderResult:
-        if not ctx.allow_order(_client_ip(context)):
+        # Global limit only: Claude.ai connector calls arrive from Anthropic's shared IPs, so a per-IP
+        # bucket would make every connector user share one quota.
+        if not ctx.allow_order(None):
             raise _raise(tools.ToolError("rate_limited", "Too many orders right now. Please try again later."))
         result = await run(
             "create_order",

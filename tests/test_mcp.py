@@ -6,8 +6,10 @@ from awning.config import load_settings
 from awning.context import AppContext, build_context
 from awning.mcp_server import build_mcp
 from awning.models import MenuItem, Shop, ShopDetails
+from awning.orders import OrderService
 from awning.ratelimit import RateLimiter
 from awning.web.app import create_app
+from fakes import FakePayPal
 
 INIT = {
     "jsonrpc": "2.0",
@@ -111,7 +113,7 @@ def _order_args(shop: Shop) -> dict:
     }
 
 
-async def test_mcp_create_order_global_limit_without_client_ip(ctx: AppContext, shop: Shop) -> None:
+async def test_mcp_create_order_global_limit_in_memory(ctx: AppContext, shop: Shop) -> None:
     ctx.order_limiter_global = RateLimiter(0, 86400)
     async with Client(build_mcp(ctx)) as client:
         result = await client.call_tool("create_order", _order_args(shop))
@@ -120,12 +122,18 @@ async def test_mcp_create_order_global_limit_without_client_ip(ctx: AppContext, 
     assert ctx.orders.list_for_shop(shop.id) == []
 
 
-def test_mcp_create_order_per_ip_limit_over_http(ctx: AppContext, shop: Shop) -> None:
+def test_mcp_create_order_over_http_uses_global_limiter_not_per_ip(ctx: AppContext, shop: Shop) -> None:
+    paypal = FakePayPal()
+    ctx.paypal = paypal
+    ctx.orders = OrderService(ctx.db, ctx.catalog, paypal, ctx.events, ctx.settings.public_url, False)
     ctx.order_limiter_ip = RateLimiter(0, 3600)
     call = {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "create_order", "arguments": _order_args(shop)}}
     with TestClient(create_app(ctx)) as client:
-        response = client.post("/mcp", json=call, headers=HEADERS)
-    assert response.status_code == 200
-    result = response.json()["result"]
-    assert result["isError"] is True
-    assert "rate_limited" in result["content"][0]["text"]
+        allowed = client.post("/mcp", json=call, headers=HEADERS).json()["result"]
+        assert allowed.get("isError") is not True
+        assert allowed["structuredContent"]["status"] == "awaiting_payment"
+        ctx.order_limiter_global = RateLimiter(0, 86400)
+        limited = client.post("/mcp", json=call, headers=HEADERS).json()["result"]
+    assert limited["isError"] is True
+    assert "rate_limited" in limited["content"][0]["text"]
+    assert len(paypal.calls_to("create_order")) == 1
