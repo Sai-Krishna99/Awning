@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import secrets
+from urllib.parse import quote, urlencode
 from datetime import datetime, timezone
 
 import anthropic
@@ -14,11 +15,12 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, ValidationError
 
 from awning.catalog import CatalogValidationError, PublishError
+from awning.connect import PayPalConnections
 from awning.context import AppContext
 from awning.extraction import ExtractionFailed, NoMenuFound, to_menu_items
 from awning.images import MAX_RAW_BYTES, ImageRejected, prepare_image
 from awning.models import MenuItem, Shop, ShopDetails
-from awning.paypal import PayPalError
+from awning.paypal import PayPalError, login_web_base
 from awning.web.routes_shop import _ctx, _not_found, templates
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,14 @@ class UploadSizeGuardRoute(APIRoute):
 
 router = APIRouter()
 upload_router = APIRouter(route_class=UploadSizeGuardRoute)
+
+LOGIN_SCOPE = "openid email https://uri.paypal.com/services/paypalattributes"
+STATE_EXPIRED_MESSAGE = (
+    "That PayPal link expired or was already used. Open your review link again and press Connect with PayPal."
+)
+NOT_PAYABLE_MESSAGE = "This PayPal account can't receive payments yet. Use a Business account."
+CANCELLED_MESSAGE = "PayPal connection was cancelled."
+CONNECT_UNREACHABLE_MESSAGE = "We couldn't reach PayPal to connect that account. Please try again."
 
 MERCHANT_ID_PATTERN = re.compile(r"^[A-Za-z0-9]{5,20}$")
 PUBLISH_ERRORS = {
@@ -137,6 +147,8 @@ def _review_page(
         request,
         "review.html",
         {
+            "connection": PayPalConnections(ctx.db).get(shop.id),
+            "paypal_login_enabled": ctx.settings.paypal_login_enabled,
             "shop": shop,
             "items": [item.model_dump() for item in shop.items],
             "suspicious_text": ctx.catalog.get_suspicious_text(shop.id),
@@ -234,11 +246,12 @@ async def publish(request: Request, token: str) -> Response:
         return fail(PUBLISH_ERRORS["no_items"])
     if any(item.needs_review for item in shop.items):
         return fail(PUBLISH_ERRORS["needs_review"])
-    merchant_id = form["payee_merchant_id"] or None
+    connection = PayPalConnections(ctx.db).get(shop.id)
+    merchant_id = connection["merchant_id"] if connection else (form["payee_merchant_id"] or None)
     email = None if merchant_id else (form["payee_email"] or None)
     if email and not form["payee_email_confirmed"]:
         return fail("PayPal can't verify emails in advance — please double-check it and tick the box.")
-    if merchant_id:
+    if merchant_id and not connection:
         try:
             recognized = bool(MERCHANT_ID_PATTERN.match(merchant_id)) and await ctx.orders.validate_payee_merchant_id(
                 merchant_id
@@ -263,6 +276,70 @@ async def publish(request: Request, token: str) -> Response:
     except CatalogValidationError as exc:
         return fail(_item_errors_message(exc.errors))
     return _no_store(RedirectResponse(f"/m/{token}", status_code=303))
+
+
+def _draft_for_connect(request: Request, token: str) -> Shop | None:
+    ctx = _ctx(request)
+    shop = ctx.catalog.get_by_admin_token(token)
+    if shop is None or shop.status == "published" or not ctx.settings.paypal_login_enabled:
+        return None
+    return shop
+
+
+@router.get("/m/{token}/paypal/connect")
+def paypal_connect(request: Request, token: str) -> Response:
+    ctx = _ctx(request)
+    shop = _draft_for_connect(request, token)
+    if shop is None:
+        return _not_found(request, "page")
+    state = PayPalConnections(ctx.db).create_state(shop.id)
+    query = urlencode(
+        {
+            "flowEntry": "static",
+            "client_id": ctx.settings.paypal_client_id,
+            "response_type": "code",
+            "scope": LOGIN_SCOPE,
+            "redirect_uri": f"{ctx.settings.public_url}/paypal/callback",
+            "state": state,
+        },
+        quote_via=quote,
+    )
+    return _no_store(RedirectResponse(f"{login_web_base(ctx.settings.paypal_base_url)}/connect?{query}", status_code=303))
+
+
+@router.get("/paypal/callback")
+async def paypal_callback(request: Request) -> Response:
+    ctx = _ctx(request)
+    params = request.query_params
+    shop_id = PayPalConnections(ctx.db).consume_state(params.get("state", ""))
+    shop = ctx.catalog.get_by_id(shop_id) if shop_id else None
+    if shop is None:
+        return _no_store(_start_page(request, 400, STATE_EXPIRED_MESSAGE))
+    if shop.status == "published":
+        return _no_store(RedirectResponse(f"/m/{shop.admin_token}", status_code=303))
+    code = params.get("code")
+    if params.get("error") or not code:
+        return _review_page(request, shop, error=CANCELLED_MESSAGE)
+    try:
+        identity = await ctx.paypal.fetch_login_identity(code)
+        payable = await ctx.orders.validate_payee_merchant_id(identity.payer_id)
+    except (PayPalError, httpx.HTTPError):
+        logger.warning("paypal connect failed")
+        return _review_page(request, shop, error=CONNECT_UNREACHABLE_MESSAGE, status=502)
+    if not payable:
+        return _review_page(request, shop, error=NOT_PAYABLE_MESSAGE, status=422)
+    PayPalConnections(ctx.db).save(shop.id, identity.payer_id, identity.email)
+    return _no_store(RedirectResponse(f"/m/{shop.admin_token}/review", status_code=303))
+
+
+@router.post("/m/{token}/paypal/disconnect")
+def paypal_disconnect(request: Request, token: str) -> Response:
+    ctx = _ctx(request)
+    shop = ctx.catalog.get_by_admin_token(token)
+    if shop is None:
+        return _not_found(request, "page")
+    PayPalConnections(ctx.db).clear(shop.id)
+    return _no_store(RedirectResponse(f"/m/{token}/review", status_code=303))
 
 
 @router.get("/m/{token}")

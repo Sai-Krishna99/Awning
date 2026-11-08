@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from awning.models import PricedOrder
-from awning.paypal import CaptureResult, PayeeInvalidError, PayPalOrder
+from awning.paypal import CaptureResult, PayeeInvalidError, PayPalIdentity, PayPalOrder
 
 
 class FakePayPal:
@@ -17,6 +17,8 @@ class FakePayPal:
         self.default_payee_merchant_id: str | None = "MERCHANT1"
         self.capture_status = "COMPLETED"
         self.capture_error: Exception | None = None
+        self.login_identity = PayPalIdentity("PAYER12345", "biz@example.com", True)
+        self.login_error: Exception | None = None
         self._order_counter = 0
 
     def _record(self, method: str, **kwargs: Any) -> None:
@@ -72,6 +74,12 @@ class FakePayPal:
             payee_email=self.default_payee_email,
             payee_merchant_id=self.default_payee_merchant_id,
         )
+
+    async def fetch_login_identity(self, code: str) -> PayPalIdentity:
+        self._record("fetch_login_identity", code=code)
+        if self.login_error is not None:
+            raise self.login_error
+        return self.login_identity
 
     async def get_order(self, paypal_order_id: str) -> dict:
         self._record("get_order", paypal_order_id=paypal_order_id)

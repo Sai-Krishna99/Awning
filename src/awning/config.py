@@ -25,6 +25,7 @@ class Settings:
     allowed_hosts: list[str]
     db_path: str
     third_party_refunds: bool
+    paypal_login_enabled: bool
 
 
 def _derive_allowed_hosts(public_url: str, env: Mapping[str, str]) -> list[str]:
@@ -67,4 +68,5 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         allowed_hosts=_derive_allowed_hosts(public_url, env),
         db_path=env.get("AWNING_DB_PATH") or "awning.db",
         third_party_refunds=env.get("AWNING_THIRD_PARTY_REFUNDS", "").lower() in ("1", "true", "yes"),
+        paypal_login_enabled=env.get("PAYPAL_LOGIN_ENABLED", "").lower() in ("1", "true"),
     )

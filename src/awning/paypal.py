@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 import httpx
+from urllib.parse import urlparse
 
 from awning.models import PricedOrder
 from awning.pricing import format_cents
@@ -31,6 +32,13 @@ class CaptureResult:
     payee_merchant_id: str | None
 
 
+@dataclass
+class PayPalIdentity:
+    payer_id: str
+    email: str | None
+    verified_account: bool
+
+
 class PayPalError(Exception):
     def __init__(self, status_code: int, name: str, issues: list[str], debug_id: str | None) -> None:
         super().__init__(f"PayPal {status_code} {name} {issues} debug_id={debug_id}")
@@ -42,6 +50,18 @@ class PayPalError(Exception):
 
 class PayeeInvalidError(PayPalError):
     pass
+
+
+def login_web_base(api_base: str) -> str:
+    """Web host that serves the Log in with PayPal consent page for a given API base."""
+    host = urlparse(api_base).netloc
+    return "https://www.paypal.com" if host == "api-m.paypal.com" else "https://www.sandbox.paypal.com"
+
+
+def _primary_email(emails: object) -> str | None:
+    entries = [e for e in emails if isinstance(e, dict) and e.get("value")] if isinstance(emails, list) else []
+    primary = next((e for e in entries if e.get("primary")), entries[0] if entries else None)
+    return primary["value"] if primary else None
 
 
 def _money(cents: int) -> dict:
@@ -134,6 +154,30 @@ class PayPalClient:
         )
         self._raise_for_error(response)
         return response
+
+    async def fetch_login_identity(self, code: str) -> PayPalIdentity:
+        """Exchange a Log in with PayPal auth code for the account's identity. Tokens are never kept."""
+        token_response = await self._http.post(
+            f"{self._base_url}/v1/oauth2/token",
+            data={"grant_type": "authorization_code", "code": code},
+            auth=(self._client_id, self._client_secret),
+        )
+        self._raise_for_error(token_response)
+        user_response = await self._http.get(
+            f"{self._base_url}/v1/identity/oauth2/userinfo",
+            params={"schema": "paypalv1.1"},
+            headers={"Authorization": f"Bearer {token_response.json()['access_token']}"},
+        )
+        self._raise_for_error(user_response)
+        info = user_response.json()
+        payer_id = info.get("payer_id")
+        if not payer_id:
+            raise PayPalError(user_response.status_code, "MISSING_PAYER_ID", [], None)
+        return PayPalIdentity(
+            payer_id=payer_id,
+            email=_primary_email(info.get("emails")),
+            verified_account=str(info.get("verified_account")).lower() == "true",
+        )
 
     async def create_order(
         self,

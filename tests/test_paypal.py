@@ -182,3 +182,58 @@ async def test_verify_webhook_false_on_failure_or_bad_body():
     client, _ = make_client(handler)
     assert await client.verify_webhook({}, b'{"id": "EV1"}', "WH1") is False
     assert await client.verify_webhook({}, b"not json", "WH1") is False
+
+
+def _identity_client(userinfo: dict | None = None, token_status: int = 200):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/identity/oauth2/userinfo":
+            return httpx.Response(200, json=userinfo if userinfo is not None else {
+                "payer_id": "PAYER12345", "verified_account": "true",
+                "emails": [{"value": "alt@x.com", "primary": False}, {"value": "biz@x.com", "primary": True}],
+            })
+        return httpx.Response(404, json={})
+
+    seen: list[httpx.Request] = []
+
+    def wrapped(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.path == "/v1/oauth2/token":
+            if token_status != 200:
+                return httpx.Response(token_status, json={"error": "invalid_grant"})
+            return httpx.Response(200, json={"access_token": "USERTOKEN", "refresh_token": "REFRESHTOK", "expires_in": 28800})
+        return handler(request)
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(wrapped))
+    return PayPalClient("cid", "secret", BASE, http=http), seen
+
+
+async def test_fetch_login_identity_exchanges_code_and_reads_userinfo():
+    client, seen = _identity_client()
+    identity = await client.fetch_login_identity("AUTHCODE")
+    assert (identity.payer_id, identity.email, identity.verified_account) == ("PAYER12345", "biz@x.com", True)
+    token_request, userinfo_request = seen
+    assert token_request.content == b"grant_type=authorization_code&code=AUTHCODE"
+    assert token_request.headers["authorization"].startswith("Basic ")
+    assert userinfo_request.url.params["schema"] == "paypalv1.1"
+    assert userinfo_request.headers["authorization"] == "Bearer USERTOKEN"
+
+
+async def test_fetch_login_identity_never_logs_tokens_or_code(caplog):
+    caplog.set_level("DEBUG")
+    client, _ = _identity_client()
+    await client.fetch_login_identity("AUTHCODE")
+    for secret in ("AUTHCODE", "USERTOKEN", "REFRESHTOK"):
+        assert secret not in caplog.text
+
+
+async def test_fetch_login_identity_bad_code_raises():
+    client, _ = _identity_client(token_status=400)
+    with pytest.raises(PayPalError) as info:
+        await client.fetch_login_identity("AUTHCODE")
+    assert info.value.status_code == 400 and "AUTHCODE" not in str(info.value)
+
+
+async def test_fetch_login_identity_missing_payer_id_raises():
+    client, _ = _identity_client(userinfo={"emails": []})
+    with pytest.raises(PayPalError):
+        await client.fetch_login_identity("AUTHCODE")

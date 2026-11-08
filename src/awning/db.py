@@ -43,6 +43,18 @@ CREATE TABLE IF NOT EXISTS extractions (
     latency_ms INTEGER NOT NULL,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS paypal_login_states (
+    state TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT
+);
+CREATE TABLE IF NOT EXISTS paypal_connections (
+    shop_id TEXT PRIMARY KEY,
+    merchant_id TEXT NOT NULL,
+    email TEXT,
+    created_at TEXT NOT NULL
+);
 """
 
 
