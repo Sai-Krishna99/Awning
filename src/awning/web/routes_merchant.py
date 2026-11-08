@@ -21,6 +21,7 @@ from awning.extraction import ExtractionFailed, NoMenuFound, to_menu_items
 from awning.images import MAX_RAW_BYTES, ImageRejected, prepare_image
 from awning.models import MenuItem, Shop, ShopDetails
 from awning.paypal import PayPalError, login_web_base
+from awning.seed import SAMPLE_MENUS_DIR
 from awning.web.routes_shop import _ctx, _not_found, templates
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,10 @@ class UploadSizeGuardRoute(APIRoute):
         return handler
 
 
+SAMPLE_MENUS = {
+    "tacos": "rosas-taco-stand-ai-generated.webp",
+    "pizza": "slice-corner-pizza-synthetic.png",
+}
 router = APIRouter()
 upload_router = APIRouter(route_class=UploadSizeGuardRoute)
 
@@ -102,8 +107,20 @@ def start_page(request: Request) -> Response:
 
 @upload_router.post("/start")
 async def start_upload(request: Request, photo: UploadFile) -> Response:
+    return await _create_draft_from_photo(request, await photo.read(MAX_RAW_BYTES + 1))
+
+
+@router.post("/start/sample")
+async def start_sample(request: Request) -> Response:
+    name = (await request.form()).get("sample")
+    filename = SAMPLE_MENUS.get(name) if isinstance(name, str) else None
+    if filename is None:
+        return _start_page(request, 400, "Pick one of the sample menus.")
+    return await _create_draft_from_photo(request, (SAMPLE_MENUS_DIR / filename).read_bytes())
+
+
+async def _create_draft_from_photo(request: Request, raw: bytes) -> Response:
     ctx = _ctx(request)
-    raw = await photo.read(MAX_RAW_BYTES + 1)
     try:
         image = await asyncio.to_thread(prepare_image, raw)
     except ImageRejected as exc:

@@ -5,6 +5,7 @@ from awning.catalog import Catalog
 from awning.models import ItemOption, MenuItem, Shop, ShopDetails
 
 DEFAULT_SEED_PATH = Path(__file__).resolve().parents[2] / "examples" / "marias-cart" / "menu.json"
+SAMPLE_MENUS_DIR = Path(__file__).resolve().parents[2] / "examples" / "menus"
 DEMO_SLUG = "marias-cart"
 
 

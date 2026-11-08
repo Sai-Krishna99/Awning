@@ -373,3 +373,41 @@ def test_upload_over_pixel_cap_names_both_limits(web, stub) -> None:
     assert response.status_code == 413
     assert "That photo is too large — please upload one under 15 MB and 25 megapixels." in response.text
     assert stub.calls == 0
+
+
+def sample(web, name="tacos"):
+    return web.post("/start/sample", data={"sample": name})
+
+
+def test_sample_unknown_is_400(web, stub) -> None:
+    for name in ("nope", "../../etc/passwd", ""):
+        assert sample(web, name).status_code == 400
+    assert stub.calls == 0
+
+
+@pytest.mark.parametrize("name", ["tacos", "pizza"])
+def test_sample_redirects_to_review(web, ctx, stub, name) -> None:
+    response = sample(web, name)
+    assert response.status_code == 303
+    assert ctx.catalog.get_by_admin_token(token_of(response)).status == "draft"
+    assert stub.calls == 1
+
+
+def test_sample_uses_upload_rate_limit(web, ctx, stub) -> None:
+    ctx.upload_limiter_global.max_events = 0
+    assert sample(web).status_code == 429
+    assert stub.calls == 0
+
+
+def test_sample_counts_against_ip_limit(web, stub) -> None:
+    for _ in range(5):
+        assert sample(web).status_code == 303
+    assert upload(web).status_code == 429
+
+
+def test_start_page_offers_samples(web) -> None:
+    text = web.get("/start").text
+    assert "No menu handy? Try a sample:" in text
+    assert 'value="tacos"' in text and 'value="pizza"' in text
+    assert "Rosa's Taco Stand (AI-generated image)" in text
+    assert "Slice Corner Pizza (synthetic image)" in text
