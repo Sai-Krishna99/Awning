@@ -95,7 +95,7 @@ AI:
 - An extraction eval harness with hand-labeled ground truth, scoring item recall and precision, price accuracy, option recall, prompt-injection behavior, latency and cost: [eval/](eval/), results in [eval/results.md](eval/results.md).
 - A demo-agent eval: scripted conversations (single-shot order, multi-turn with options, a request to change the price) run on Haiku, Sonnet and Opus with a fake PayPal, scored on the order lines, the server total, the approval link and invented prices: [eval/run_agent_eval.py](eval/run_agent_eval.py), results in [eval/agent_results.md](eval/agent_results.md).
 
-Engineering: 316 automated tests ([tests/](tests/)) using fakes for PayPal and Anthropic; during development the app itself created real PayPal sandbox orders and approval links, through the storefront API and through the built-in demo agent (real Claude API calls: `find_shops`, `get_menu`, `create_order`). Capture to a different merchant account, third-party refund behavior and webhook delivery were verified live with spike scripts (see PayPal integration details). On the hosted app on 2026-11-08, live sandbox payments went through end to end: storefront checkout and an order placed from Claude.ai through the custom connector, each captured once and received in the Maria's Cart sandbox merchant account.
+Engineering: 317 automated tests ([tests/](tests/)) using fakes for PayPal and Anthropic; during development the app itself created real PayPal sandbox orders and approval links, through the storefront API and through the built-in demo agent (real Claude API calls: `find_shops`, `get_menu`, `create_order`). Capture to a different merchant account, third-party refund behavior and webhook delivery were verified live with spike scripts (see PayPal integration details). On the hosted app on 2026-11-08, live sandbox payments went through end to end: storefront checkout and an order placed from Claude.ai through the custom connector, each captured once and received in the Maria's Cart sandbox merchant account.
 
 ### Design
 
@@ -195,7 +195,7 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 uv sync
 cp .env.example .env     # fill in PayPal sandbox and Anthropic values
 uv run uvicorn awning.main:app --reload
-uv run pytest            # 316 tests, no network or keys needed
+uv run pytest            # 317 tests, no network or keys needed
 ```
 
 `.env.example` lists every setting. At minimum: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_PLATFORM_MERCHANT_ID`, `ANTHROPIC_API_KEY`. `PAYPAL_WEBHOOK_ID` is needed only to accept webhooks, and `PAYPAL_DEMO_PAYEE_*` only to send Maria's Cart's payments to its separate sandbox merchant account. Run the extraction eval with `uv run python -m eval.run_eval --models claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5 --cases eval/cases` (prefix with `env -u ANTHROPIC_BASE_URL` only if that variable is set in your shell).

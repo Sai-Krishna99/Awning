@@ -21,13 +21,22 @@
     if (event.dataTransfer.files.length) { input.files = event.dataTransfer.files; showName(); }
   });
 
-  form.addEventListener("submit", (event) => {
-    if (!input.files.length) { event.preventDefault(); input.click(); return; }
+  const showLoading = () => {
     loading.classList.remove("hidden");
-    button.disabled = true;
+    step.textContent = steps[0];
     let index = 0;
     timer = setInterval(() => { index = Math.min(index + 1, steps.length - 1); step.textContent = steps[index]; }, 7000);
+  };
+
+  form.addEventListener("submit", (event) => {
+    if (!input.files.length) { event.preventDefault(); input.click(); return; }
+    button.disabled = true;
+    showLoading();
   });
+
+  // The overlay covers the page, so a second click can't land. The clicked button stays
+  // enabled so the browser still sends its sample value.
+  document.getElementById("sample-form").addEventListener("submit", showLoading);
 
   window.addEventListener("pageshow", () => {
     loading.classList.add("hidden");

@@ -411,3 +411,9 @@ def test_start_page_offers_samples(web) -> None:
     assert 'value="tacos"' in text and 'value="pizza"' in text
     assert "Rosa's Taco Stand (AI-generated image)" in text
     assert "Slice Corner Pizza (synthetic image)" in text
+
+
+def test_sample_form_shows_loading_overlay(web) -> None:
+    assert 'id="sample-form"' in web.get("/start").text
+    script = web.get("/static/start.js").text
+    assert 'getElementById("sample-form")' in script
