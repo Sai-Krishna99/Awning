@@ -147,3 +147,18 @@ Tested end to end against the app's own account; output is in `out/run_self_card
 - Capture status `COMPLETED` and the second account's email/merchant_id on the capture mean §5's core assumption holds.
 - The refund lines settle (b).
 - The webhook line settles (c).
+
+## Third-party payee — verified live (2026-11-08)
+
+Ran `spike_payee.py` with `PAYEE_EMAIL=sb-oquhe53788047@business.example.com` (a second US sandbox business account, "Maria's Cart"), separate from the app's own account.
+
+| Check | Result |
+|---|---|
+| Create + capture a $1.00 order (card payment source) with `payee.email_address` = the other account | **201, status COMPLETED** in one call; capture COMPLETED; gross 1.00, fee 0.52, net 0.48 — the fee is charged to the payee, i.e. the money landed in the merchant's account |
+| Payee on the captured order | email echoed; `merchant_id` **not** returned (we can't learn a merchant's ID from captures) |
+| GET order / GET capture (polling path) | 200, COMPLETED |
+| Refund from our app (plain) | **403 NOT_AUTHORIZED / PERMISSION_DENIED** |
+| Refund with `PayPal-Auth-Assertion` for the payee | 400 |
+| Webhooks to our app for the third-party capture | `PAYMENT.CAPTURE.COMPLETED` arrived (~2 min) |
+
+Implications: the core design holds — one app pays many merchants by email. In-app refunds stay demo-payee-only (spec §5). Webhooks do arrive for third-party orders but late, so return-URL capture + polling stays primary. JS SDK buttons for this shop still need its merchant (Account) ID from the developer dashboard, or the redirect fallback.
