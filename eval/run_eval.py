@@ -9,11 +9,12 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from anthropic import AsyncAnthropic
+from anthropic import APIError, AsyncAnthropic
+from pydantic import ValidationError
 
 from awning.config import load_settings
 from awning.extraction import ExtractionFailed, ExtractionResult, MenuExtractor
-from awning.images import prepare_image
+from awning.images import ImageRejected, PreparedImage, prepare_image
 from eval.score import CaseScore, ExpectedItem, score_case
 
 # USD per million tokens (input, output)
@@ -43,14 +44,41 @@ def load_expected(case_dir: Path) -> tuple[list[ExpectedItem], bool]:
     return items, bool(data.get("adversarial", False))
 
 
+def describe_error(exc: Exception) -> str:
+    return f"{type(exc).__name__}: {str(exc)[:200]}".replace("|", "/").replace("\n", " ")
+
+
+async def evaluate_case(extractor: MenuExtractor, case_dir: Path, image: PreparedImage | str) -> dict:
+    row: dict = {"case": case_dir.name}
+    if isinstance(image, str):
+        row["error"] = image
+        return row
+    expected, adversarial = load_expected(case_dir)
+    try:
+        result: ExtractionResult = await extractor.extract(image)
+    except (ExtractionFailed, APIError, ValidationError) as exc:
+        row["error"] = describe_error(exc)
+        return row
+    row.update(
+        score=asdict(score_case(expected, result.menu, adversarial)), latency_ms=result.latency_ms,
+        input_tokens=result.input_tokens, output_tokens=result.output_tokens,
+        cost_usd=cost_usd(extractor.model, result.input_tokens, result.output_tokens),
+        menu=result.menu.model_dump(),
+    )
+    return row
+
+
+ZERO_SCORE = {"item_recall": 0.0, "item_precision": 0.0, "price_accuracy": 0.0, "option_recall": 0.0}
+
+
 def pct(values: list[float]) -> str:
     return f"{statistics.mean(values):.0%}" if values else "-"
 
 
 def summarize(model: str, rows: list[dict]) -> str:
     ok = [r for r in rows if "score" in r]
-    scores = [r["score"] for r in ok]
-    adversarial = [s for s in scores if s["injection_obeyed"] is not None]
+    scores = [r.get("score", ZERO_SCORE) for r in rows]
+    adversarial = [r["score"] for r in ok if r["score"]["injection_obeyed"] is not None]
     obeyed = f"{sum(s['injection_obeyed'] for s in adversarial)}/{len(adversarial)}" if adversarial else "-"
     flagged = f"{sum(s['injection_flagged'] for s in adversarial)}/{len(adversarial)}" if adversarial else "-"
     p50 = f"{statistics.median(r['latency_ms'] for r in ok) / 1000:.1f}s" if ok else "-"
@@ -71,7 +99,9 @@ def render_results(models: list[str], rows: dict[str, list[dict]], waiting: list
         "| injection obeyed | injection flagged | p50 latency | mean cost / extraction |",
         "|---|---|---|---|---|---|---|---|---|---|",
         *(summarize(m, rows[m]) for m in models), "",
-        "Injection columns count adversarial cases only (obeyed = every price came back 0 or null).", "",
+        "Accuracy columns are means over all cases; an errored case counts as 0% (so failures are not hidden). "
+        "Latency and cost are over cases ok only. Injection columns count successful adversarial cases only "
+        "(obeyed = every price came back 0 or null).", "",
         "## Per case", "",
         "| model | case | recall | precision | price acc | option recall | latency | cost | status |",
         "|---|---|---|---|---|---|---|---|---|",
@@ -106,25 +136,15 @@ async def run(models: list[str], cases_dir: Path) -> None:
         if image_path is None:
             waiting.append(case_dir.name)
             continue
-        cases.append((case_dir, prepare_image(image_path.read_bytes())))
+        try:
+            cases.append((case_dir, prepare_image(image_path.read_bytes())))
+        except ImageRejected as exc:
+            cases.append((case_dir, f"ImageRejected: {exc.reason}"))
     rows: dict[str, list[dict]] = {m: [] for m in models}
     for model in models:
         extractor = MenuExtractor(client, model, settings.extraction_effort)
         for case_dir, image in cases:
-            expected, adversarial = load_expected(case_dir)
-            row: dict = {"case": case_dir.name}
-            try:
-                result: ExtractionResult = await extractor.extract(image)
-            except ExtractionFailed as exc:
-                row["error"] = str(exc)
-            else:
-                score: CaseScore = score_case(expected, result.menu, adversarial)
-                row.update(
-                    score=asdict(score), latency_ms=result.latency_ms,
-                    input_tokens=result.input_tokens, output_tokens=result.output_tokens,
-                    cost_usd=cost_usd(model, result.input_tokens, result.output_tokens),
-                    menu=result.menu.model_dump(),
-                )
+            row = await evaluate_case(extractor, case_dir, image)
             rows[model].append(row)
             (runs_dir / f"{model}__{case_dir.name}.json").write_text(json.dumps(row, indent=2) + "\n")
             print(model, case_dir.name, row.get("error", "ok"), flush=True)
