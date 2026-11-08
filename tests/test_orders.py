@@ -8,14 +8,16 @@ from awning.context import AppContext
 from awning.events import EventBus
 from awning.models import ItemOption, MenuItem, Order, OrderLineRequest, Shop, ShopDetails
 from awning.orders import (
+    OrderCreationFailed,
     OrderInputError,
     OrderService,
     PaymentNotCompleted,
+    RefundFailed,
     RefundNotSupported,
     ShopNotFound,
     TransitionError,
 )
-from awning.paypal import PayPalError
+from awning.paypal import PayeeInvalidError, PayPalError
 from awning.pricing import PricingError
 from fakes import FakePayPal
 
@@ -229,3 +231,60 @@ async def test_validate_payee_merchant_id(service, paypal) -> None:
 async def test_input_validation(ctx, service, overrides) -> None:
     with pytest.raises(OrderInputError):
         await place(service, make_shop(ctx), **overrides)
+
+
+class BrokenPayPal(FakePayPal):
+    def __init__(self, error: Exception) -> None:
+        super().__init__()
+        self.error = error
+
+    async def create_order(self, **kwargs):
+        raise self.error
+
+    async def get_order(self, paypal_order_id):
+        raise self.error
+
+    async def refund_capture(self, capture_id, *, request_key):
+        raise self.error
+
+
+@pytest.mark.parametrize(
+    "error", [PayPalError(500, "X", [], None), PayeeInvalidError(422, "X", ["PAYEE_ACCOUNT_INVALID"], None), httpx.ReadTimeout("t")]
+)
+async def test_create_failure_persists_nothing(ctx, events, error) -> None:
+    shop = make_shop(ctx)
+    service = make_service(ctx, BrokenPayPal(error), events)
+    received: list[dict] = []
+    stream = events.subscribe(shop.id)
+    task = asyncio.create_task(stream.__anext__())
+    await asyncio.sleep(0)
+    with pytest.raises(OrderCreationFailed):
+        await place(service, shop)
+    assert service.list_for_shop(shop.id) == []
+    assert not task.done()
+    task.cancel()
+
+
+async def test_complete_payment_without_paypal_order_rejected(ctx, service, paypal) -> None:
+    order = await place(service, make_shop(ctx))
+    ctx.db.conn.execute("UPDATE orders SET paypal_order_id = NULL WHERE id = ?", (order.id,))
+    ctx.db.conn.commit()
+    with pytest.raises(PaymentNotCompleted):
+        await service.complete_payment(order.id)
+    assert paypal.capture_count == 0
+
+
+async def test_refresh_swallows_paypal_errors(ctx, service, paypal) -> None:
+    order = await place(service, make_shop(ctx))
+    service.paypal = BrokenPayPal(httpx.ConnectError("x"))
+    assert await service.refresh_from_paypal(order.id) == order
+
+
+async def test_refund_failure_leaves_order_unchanged(ctx, service) -> None:
+    shop = make_shop(ctx)
+    order = await place(service, shop)
+    paid = await service.complete_payment(order.id)
+    service.paypal = BrokenPayPal(PayPalError(500, "X", [], None))
+    with pytest.raises(RefundFailed):
+        await service.refund(order.id, shop.admin_token)
+    assert service.get(order.id) == paid

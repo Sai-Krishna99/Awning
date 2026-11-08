@@ -11,6 +11,8 @@ from awning.db import Database
 from awning.events import EventBus
 from awning.models import Channel, Order, OrderLineRequest, PricedLine, PricedOrder, Shop, new_id
 from awning.paypal import PayeeInvalidError, PayPalClient, PayPalError
+
+_PAYPAL_ERRORS = (PayPalError, httpx.HTTPError)
 from awning.pricing import format_cents, price_order
 
 _POST_PAYMENT = ("paid", "ready", "picked_up")
@@ -38,6 +40,18 @@ class TransitionError(Exception):
 
 class RefundNotSupported(Exception):
     pass
+
+
+class OrderCreationFailed(Exception):
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+class RefundFailed(Exception):
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
 
 
 class PaymentNotCompleted(Exception):
@@ -94,10 +108,26 @@ class OrderService:
             raise ShopNotFound(shop_slug)
         priced = price_order(shop, lines)
         order_id = new_id("order")
+        try:
+            paypal_order = await self.paypal.create_order(
+                reference_id=order_id,
+                priced=priced,
+                payee_merchant_id=shop.payee_merchant_id,
+                payee_email=shop.payee_email,
+                brand_name=shop.name,
+                description=f"{shop.name} pickup order",
+                return_url=f"{self.public_url}/o/{order_id}/return",
+                cancel_url=f"{self.public_url}/o/{order_id}/cancelled",
+            )
+        except PayeeInvalidError as exc:
+            raise OrderCreationFailed("the merchant's PayPal setup needs attention") from exc
+        except _PAYPAL_ERRORS as exc:
+            raise OrderCreationFailed(f"could not start payment: {type(exc).__name__}") from exc
         now = _now()
         self.db.conn.execute(
             "INSERT INTO orders (id, shop_id, status, channel, lines_json, total_cents, customer_name,"
-            " pickup_time, note, created_at, updated_at) VALUES (?, ?, 'awaiting_payment', ?, ?, ?, ?, ?, ?, ?, ?)",
+            " pickup_time, note, paypal_order_id, approval_url, created_at, updated_at)"
+            " VALUES (?, ?, 'awaiting_payment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 order_id,
                 shop.id,
@@ -107,22 +137,13 @@ class OrderService:
                 customer_name.strip(),
                 pickup_time.strip(),
                 note,
+                paypal_order.id,
+                paypal_order.approval_url,
                 now,
                 now,
             ),
         )
         self.db.conn.commit()
-        paypal_order = await self.paypal.create_order(
-            reference_id=order_id,
-            priced=priced,
-            payee_merchant_id=shop.payee_merchant_id,
-            payee_email=shop.payee_email,
-            brand_name=shop.name,
-            description=f"{shop.name} pickup order",
-            return_url=f"{self.public_url}/o/{order_id}/return",
-            cancel_url=f"{self.public_url}/o/{order_id}/cancelled",
-        )
-        self._update(order_id, paypal_order_id=paypal_order.id, approval_url=paypal_order.approval_url)
         order = self.get(order_id)
         self._publish(order, "order_created")
         return order
@@ -132,6 +153,8 @@ class OrderService:
             order = self._require(order_id)
             if order.status != "awaiting_payment":
                 return order
+            if order.paypal_order_id is None:
+                raise PaymentNotCompleted("order has no PayPal order")
             try:
                 result = await self.paypal.capture_order(order.paypal_order_id, request_key=order_id)
             except (PayPalError, httpx.HTTPError) as exc:
@@ -147,7 +170,10 @@ class OrderService:
         order = self._require(order_id)
         if order.status != "awaiting_payment" or order.paypal_order_id is None:
             return order
-        paypal_order = await self.paypal.get_order(order.paypal_order_id)
+        try:
+            paypal_order = await self.paypal.get_order(order.paypal_order_id)
+        except _PAYPAL_ERRORS:
+            return order
         if paypal_order.get("status") == "APPROVED":
             return await self.complete_payment(order_id)
         return order
@@ -189,7 +215,10 @@ class OrderService:
             order = self._require(order_id)
             if order.status not in _POST_PAYMENT or order.capture_id is None:
                 raise TransitionError(f"cannot refund order in status {order.status}")
-            await self.paypal.refund_capture(order.capture_id, request_key=order_id)
+            try:
+                await self.paypal.refund_capture(order.capture_id, request_key=order_id)
+            except _PAYPAL_ERRORS as exc:
+                raise RefundFailed(f"refund failed: {type(exc).__name__}") from exc
             self._update(order_id, status="refunded")
             order = self.get(order_id)
             self._publish(order, "order_updated")
