@@ -63,7 +63,7 @@ Paste or adapt the README section "How Awning meets the judging criteria" (Techn
 - [ ] Built with: Python, FastAPI, SQLite, PayPal Orders API, PayPal JS SDK, MCP, Anthropic Claude, AG Grid, Render
 - [ ] Sponsor tools: AG Grid (Best Use of AG Grid), Render
 - [ ] Category/prizes to select: Grand; Best Use of Agentic Commerce; Most Impactful; Best Demo Delivery; Best Use of PayPal + AI
-- [ ] Video URL: TODO(deploy): public YouTube link (under 3 min)
+- [x] Video URL: https://youtu.be/YHXhwGfsCi8 (2:28)
 - [x] Hosted app URL: https://awning-o5t9.onrender.com
 - [x] Public repo URL: https://github.com/Sai-Krishna99/Awning (MIT license shows in About)
 - [ ] Testing instructions with sandbox buyer login: TODO(deploy): paste README "Try it" section with credentials

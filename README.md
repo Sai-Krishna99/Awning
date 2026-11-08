@@ -9,7 +9,7 @@ Entry for the PayPal AI Hackathon 2026.
 | | |
 |---|---|
 | Hosted demo | https://awning-o5t9.onrender.com |
-| Demo video | TODO(deploy): public YouTube URL |
+| Demo video | https://youtu.be/YHXhwGfsCi8 (2:28) |
 | Judge sandbox buyer login | sb-sefe253794913@personal.example.com / S1Tn3*kK (see [Try it](#try-it-for-judges)) |
 
 ## The problem
@@ -130,7 +130,7 @@ About 1 in 6 small businesses still has no website ([Clutch, Aug 2025](https://c
 
 ### Presentation
 
-- Video script and shot list: [docs/video-script.md](docs/video-script.md). Video: TODO(deploy): public YouTube URL.
+- Video script and shot list: [docs/video-script.md](docs/video-script.md). Video: https://youtu.be/YHXhwGfsCi8.
 - Judge path with zero setup, and stated limitations below.
 - Honest framing: what is real and what is demo ([next sections](#whats-real-vs-demo)).
 
