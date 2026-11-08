@@ -32,7 +32,7 @@ Buyers can order three ways: from their own assistant (for example a Claude.ai c
 
 ### Accomplishments
 
-TODO(deploy): fill from the final live end-to-end run and eval (for example the real-photo eval numbers, once added). Until then, accurate statements: photo to published shop works; orders through the storefront API and the built-in demo agent created real sandbox PayPal orders and approval links; the eval's 2 synthetic cases pass for all three models (see [eval/results.md](../eval/results.md)); real-photo eval cases are still awaiting photos. TODO(deploy): verify an order via the Claude.ai connector. TODO(deploy): live end-to-end payment through the hosted app.
+TODO(deploy): fill from the final live end-to-end run and eval (for example the real-photo eval numbers, once added). Until then, accurate statements: photo to published shop works; orders through the storefront API and the built-in demo agent created real sandbox PayPal orders and approval links; the eval's 2 synthetic cases pass for all three models (see [eval/results.md](../eval/results.md)); real-photo eval cases are still awaiting photos. On the hosted app on 2026-11-08, live sandbox payments went through end to end: storefront checkout and an order placed from Claude.ai through the custom connector, each captured once and received in the Maria's Cart sandbox merchant account.
 
 ### What we learned
 
@@ -57,8 +57,8 @@ Paste or adapt the README section "How Awning meets the judging criteria" (Techn
 - [ ] Sponsor tools: AG Grid (Best Use of AG Grid), Render
 - [ ] Category/prizes to select: Grand; Best Use of Agentic Commerce; Most Impactful; Best Demo Delivery; Best Use of PayPal + AI
 - [ ] Video URL: TODO(deploy): public YouTube link (under 3 min)
-- [ ] Hosted app URL: TODO(deploy): Render URL
-- [ ] Public repo URL: TODO(deploy): GitHub URL; license (MIT) shows in About
+- [x] Hosted app URL: https://awning-o5t9.onrender.com
+- [x] Public repo URL: https://github.com/Sai-Krishna99/Awning (MIT license shows in About)
 - [ ] Testing instructions with sandbox buyer login: TODO(deploy): paste README "Try it" section with credentials
 - [ ] Screenshots: TODO(deploy): review grid, Claude.ai order, PayPal approval, board
 - [ ] Architecture diagram image (optional): render docs/architecture.md

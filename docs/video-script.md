@@ -44,7 +44,7 @@ Shots: architecture diagram from [docs/architecture.md](architecture.md) rendere
 
 Shot: hosted URL and the sandbox buyer login on a plain card (text only).
 
-Voiceover: "Maria's Cart is a fictional demo merchant; every payment is a real PayPal sandbox transaction. Try it at TODO(deploy): hosted URL."
+Voiceover: "Maria's Cart is a fictional demo merchant; every payment is a real PayPal sandbox transaction. Try it at https://awning-o5t9.onrender.com."
 
 ## Rules checklist
 
