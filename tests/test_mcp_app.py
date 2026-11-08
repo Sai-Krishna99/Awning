@@ -119,3 +119,12 @@ def test_bundle_export_clause_becomes_global_without_external_imports() -> None:
     assert "const __extApps={App:" in html
     assert "export{" not in html and "/*__EXT_APPS_BUNDLE__*/" not in html
     assert "view order page" in html.lower()
+
+
+def test_card_formats_pickup_time_and_has_no_own_border() -> None:
+    from awning.mcp_app import render_card_html
+
+    html = render_card_html()
+    assert "function friendlyTime" in html
+    assert ".card { padding: 14px 16px; }" in html
+    assert "border-radius: 14px" not in html

@@ -23,7 +23,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; background: transparent; }
 body { font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif); font-size: 14px; line-height: 1.4; color: var(--color-text-primary, var(--ink)); padding: 4px; }
-.card { border: 1px solid var(--color-border-primary, var(--line)); border-radius: 14px; padding: 14px 16px; }
+.card { padding: 14px 16px; }
 .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .shop { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
 .pill { flex: none; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--terracotta-soft); color: var(--terracotta); }
@@ -72,6 +72,19 @@ let pollingFor = null;
 
 function money(amount) { return "$" + amount; }
 
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function friendlyTime(raw) {
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::\d{2})?$/.exec(raw || "");
+  if (!m) return raw || "";
+  const [year, month, day, hour, minute] = m.slice(1).map(Number);
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) return raw;
+  const weekday = DAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+  const clock = ((hour % 12) || 12) + ":" + String(minute).padStart(2, "0") + " " + (hour < 12 ? "AM" : "PM");
+  return weekday + ", " + MONTHS[month - 1] + " " + day + " \u00b7 " + clock;
+}
+
 function render() {
   if (!order) return;
   $("card").hidden = false;
@@ -101,7 +114,7 @@ function render() {
   }
   $("total").textContent = money(order.total);
   const where = order.pickup_location ? " at " + order.pickup_location : "";
-  $("pickup").textContent = "Pickup " + (order.pickup_time || "") + where;
+  $("pickup").textContent = "Pickup " + friendlyTime(order.pickup_time) + where;
   $("view").hidden = !/^https?:\/\//.test(order.status_url || "");
 }
 
