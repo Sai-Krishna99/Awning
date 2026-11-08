@@ -53,13 +53,13 @@ Details and a request walk-through: [docs/architecture.md](docs/architecture.md)
 
 ## Try it (for judges)
 
-No setup is needed for the first two options.
+No setup is needed for the first two options. To see orders arrive, open the public live board for Maria's Cart: https://awning-o5t9.onrender.com/s/marias-cart/live (read-only, customer names shortened).
 
 1. **Shop as a human.** Open the hosted demo, choose Maria's Cart in the directory, add items, pay with PayPal.
 2. **Watch an agent buy.** Open `/try` and ask for something from Maria's Cart. The agent searches, reads the menu and returns an approval link.
 3. **Use your own Claude.ai.** In Claude.ai: Customize, Connectors, Add custom connector, enter `https://awning-o5t9.onrender.com/mcp`, set Authentication to "No sign-in", Add. In a chat, click **+**, Connectors, toggle Awning on. The first tool call asks for approval (Allow once or Always allow). The Free plan allows one custom connector. Then ask: "Order 2 lattes with oat milk from Maria's Cart for 9am pickup, name Sam."
 
-Also try making your own shop: upload any menu photo at `/start`, or one from [examples/menus/](examples/menus/). Leaving the payee blank sends money to the Awning demo account, so in-app refunds work from that shop's board.
+Also try making your own shop: upload any menu photo at `/start`, or press a sample-menu button under the upload form on `/start` (an AI-generated taco menu or a synthetic pizza menu). You can also upload one from [examples/menus/](examples/menus/). Leaving the payee blank sends money to the Awning demo account, so in-app refunds work from that shop's board.
 
 **Paying.** Approve payments with the sandbox buyer account: sb-sefe253794913@personal.example.com with password S1Tn3*kK. These are PayPal sandbox credentials only.
 
@@ -68,7 +68,7 @@ Also try making your own shop: upload any menu photo at `/start`, or one from [e
 1. The assistant (or storefront) gives you a PayPal approval link.
 2. Open it, log in with the sandbox buyer, approve.
 3. PayPal redirects to an Awning order page showing the order as paid (the server captures on return).
-4. The merchant board for that shop shows the order arrive and change status live. For Maria's Cart, TODO(deploy): public link or screenshot of its board.
+4. The merchant board for that shop shows the order arrive and change status live. For Maria's Cart, watch the public board at https://awning-o5t9.onrender.com/s/marias-cart/live.
 
 If the app has been idle, give the first request a few seconds. Cost-protection rate limits apply to uploads, order creation and the demo agent and may show a "try again later" message.
 
@@ -95,7 +95,7 @@ AI:
 - An extraction eval harness with hand-labeled ground truth, scoring item recall and precision, price accuracy, option recall, prompt-injection behavior, latency and cost: [eval/](eval/), results in [eval/results.md](eval/results.md).
 - A demo-agent eval: scripted conversations (single-shot order, multi-turn with options, a request to change the price) run on Haiku, Sonnet and Opus with a fake PayPal, scored on the order lines, the server total, the approval link and invented prices: [eval/run_agent_eval.py](eval/run_agent_eval.py), results in [eval/agent_results.md](eval/agent_results.md).
 
-Engineering: 296 automated tests ([tests/](tests/)) using fakes for PayPal and Anthropic; during development the app itself created real PayPal sandbox orders and approval links, through the storefront API and through the built-in demo agent (real Claude API calls: `find_shops`, `get_menu`, `create_order`). Capture to a different merchant account, third-party refund behavior and webhook delivery were verified live with spike scripts (see PayPal integration details). On the hosted app on 2026-11-08, live sandbox payments went through end to end: storefront checkout and an order placed from Claude.ai through the custom connector, each captured once and received in the Maria's Cart sandbox merchant account.
+Engineering: 316 automated tests ([tests/](tests/)) using fakes for PayPal and Anthropic; during development the app itself created real PayPal sandbox orders and approval links, through the storefront API and through the built-in demo agent (real Claude API calls: `find_shops`, `get_menu`, `create_order`). Capture to a different merchant account, third-party refund behavior and webhook delivery were verified live with spike scripts (see PayPal integration details). On the hosted app on 2026-11-08, live sandbox payments went through end to end: storefront checkout and an order placed from Claude.ai through the custom connector, each captured once and received in the Maria's Cart sandbox merchant account.
 
 ### Design
 
@@ -195,7 +195,7 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 uv sync
 cp .env.example .env     # fill in PayPal sandbox and Anthropic values
 uv run uvicorn awning.main:app --reload
-uv run pytest            # 296 tests, no network or keys needed
+uv run pytest            # 316 tests, no network or keys needed
 ```
 
 `.env.example` lists every setting. At minimum: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_PLATFORM_MERCHANT_ID`, `ANTHROPIC_API_KEY`. `PAYPAL_WEBHOOK_ID` is needed only to accept webhooks, and `PAYPAL_DEMO_PAYEE_*` only to send Maria's Cart's payments to its separate sandbox merchant account. Run the extraction eval with `uv run python -m eval.run_eval --models claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5 --cases eval/cases` (prefix with `env -u ANTHROPIC_BASE_URL` only if that variable is set in your shell).

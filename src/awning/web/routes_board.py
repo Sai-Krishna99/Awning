@@ -1,6 +1,7 @@
 import asyncio
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -10,6 +11,7 @@ from pydantic import BaseModel
 
 from awning.context import AppContext
 from awning.models import Order, Shop
+from awning.seed import DEMO_SLUG
 from awning.orders import OrderNotFound, RefundFailed, RefundNotSupported, ShopNotFound, TransitionError
 from awning.web.routes_shop import _ctx, _not_found, templates
 
@@ -27,6 +29,23 @@ class StatusRequest(BaseModel):
 def _board_order(order: Order | dict) -> dict:
     data = order if isinstance(order, dict) else order.model_dump(mode="json")
     return {key: value for key, value in data.items() if key not in PRIVATE_FIELDS}
+
+
+PUBLIC_FIELDS = ("id", "status", "channel", "total_cents", "customer_name", "pickup_time", "created_at")
+PUBLIC_LINE_FIELDS = ("name", "option_names", "quantity")
+
+
+def _mask_name(name: str) -> str:
+    name = name.strip()
+    return f"{name[0]}." if name else ""
+
+
+def _public_order(order: Order | dict) -> dict:
+    data = order if isinstance(order, dict) else order.model_dump(mode="json")
+    public = {key: data[key] for key in PUBLIC_FIELDS}
+    public["customer_name"] = _mask_name(data["customer_name"])
+    public["lines"] = [{key: line[key] for key in PUBLIC_LINE_FIELDS} for line in data["lines"]]
+    return public
 
 
 def _private(response: Response) -> Response:
@@ -54,7 +73,9 @@ def _shop_or_404(request: Request, token: str) -> Shop:
     return shop
 
 
-async def shop_event_stream(ctx: AppContext, shop_id: str) -> AsyncIterable[ServerSentEvent]:
+async def shop_event_stream(
+    ctx: AppContext, shop_id: str, serialize: Callable[[Order | dict], dict] = _board_order
+) -> AsyncIterable[ServerSentEvent]:
     events = ctx.events.subscribe(shop_id)
     # The bus registers the subscriber on the first __anext__, so start pulling before yielding anything.
     pending = asyncio.ensure_future(events.__anext__())
@@ -64,11 +85,44 @@ async def shop_event_stream(ctx: AppContext, shop_id: str) -> AsyncIterable[Serv
         while True:
             event = await pending
             pending = asyncio.ensure_future(events.__anext__())
-            yield ServerSentEvent(event=event["type"], data=_board_order(event["order"]))
+            yield ServerSentEvent(event=event["type"], data=serialize(event["order"]))
     finally:
         pending.cancel()
         await asyncio.gather(pending, return_exceptions=True)
         await events.aclose()
+
+
+def public_event_stream(ctx: AppContext, shop_id: str) -> AsyncIterable[ServerSentEvent]:
+    return shop_event_stream(ctx, shop_id, _public_order)
+
+
+def _demo_shop_or_404(request: Request, slug: str) -> Shop:
+    shop = _ctx(request).catalog.get_published(slug) if slug == DEMO_SLUG else None
+    if shop is None:
+        raise HTTPException(status_code=404, detail="Unknown shop.")
+    return shop
+
+
+@router.get("/s/{slug}/live")
+def live_board_page(request: Request, shop: Annotated[Shop, Depends(_demo_shop_or_404)]) -> Response:
+    context = {"shop": shop, "token": "", "read_only": True, "api_base": f"/api/s/{shop.slug}/live"}
+    return _private(templates.TemplateResponse(request, "board.html", context))
+
+
+@router.get("/api/s/{slug}/live/orders")
+def live_orders(request: Request, shop: Annotated[Shop, Depends(_demo_shop_or_404)]) -> Response:
+    cutoff = datetime.now(timezone.utc) - AWAITING_VISIBLE_FOR
+    orders = _ctx(request).orders.list_for_shop(shop.id, awaiting_since=cutoff)
+    return _json({"orders": [_public_order(order) for order in orders]})
+
+
+@router.get("/api/s/{slug}/live/events", response_class=EventSourceResponse)
+async def live_events(
+    request: Request, response: Response, shop: Annotated[Shop, Depends(_demo_shop_or_404)]
+) -> AsyncIterable[ServerSentEvent]:
+    response.headers["Referrer-Policy"] = "no-referrer"
+    async for event in public_event_stream(_ctx(request), shop.id):
+        yield event
 
 
 @router.get("/m/{token}/board")
@@ -76,7 +130,7 @@ def board_page(request: Request, token: str) -> Response:
     shop = _shop(request, token)
     if shop is None or shop.status != "published":
         return _private(_not_found(request, "page"))
-    return _private(templates.TemplateResponse(request, "board.html", {"shop": shop, "token": token}))
+    return _private(templates.TemplateResponse(request, "board.html", {"shop": shop, "token": token, "read_only": False, "api_base": f"/api/m/{quote(token)}"}))
 
 
 @router.get("/api/m/{token}/orders")

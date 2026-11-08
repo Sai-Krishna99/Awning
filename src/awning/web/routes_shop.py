@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+from awning.seed import DEMO_SLUG
 from awning.context import AppContext
 from awning.models import Order, OrderLineRequest, Shop
 from awning.orders import (
@@ -24,6 +25,7 @@ from awning.pricing import PricingError, format_cents
 WEB_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=WEB_DIR / "templates")
 templates.env.filters["money"] = format_cents
+templates.env.globals["demo_slug"] = DEMO_SLUG
 
 router = APIRouter()
 

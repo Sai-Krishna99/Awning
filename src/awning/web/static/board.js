@@ -1,12 +1,12 @@
 (function () {
   const root = document.getElementById("board");
-  const token = root.dataset.token;
+  const readOnly = root.dataset.readonly === "true";
   const list = document.getElementById("orders");
   const empty = document.getElementById("empty");
   const live = document.getElementById("live");
   const errorBox = document.getElementById("board-error");
   const soundButton = document.getElementById("sound-toggle");
-  const api = "/api/m/" + encodeURIComponent(token);
+  const api = root.dataset.api;
   const CHANNELS = { agent: "AI agent", web: "Web", demo_agent: "Demo agent" };
   const STATUS = {
     awaiting_payment: "Waiting for payment", paid: "Paid", ready: "Ready for pickup",
@@ -140,6 +140,7 @@
     node.appendChild(items);
     if (order.note) node.appendChild(el("p", "mt-2 text-sm italic text-ink-soft", "Note: " + order.note));
     node.appendChild(el("p", "mt-2 text-sm font-semibold" + (awaiting ? " text-ink-soft" : " text-terracotta-deep"), STATUS[order.status] || order.status));
+    if (readOnly) return node;
     const actions = el("div", "order-actions flex flex-wrap gap-2 mt-3");
     if (order.status === "paid") actions.appendChild(actionButton(order, "Ready", "btn-primary", { url: "/status", body: { status: "ready" } }));
     if (order.status === "ready") actions.appendChild(actionButton(order, "Picked up", "btn-primary", { url: "/status", body: { status: "picked_up" } }));
