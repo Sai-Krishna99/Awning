@@ -1,64 +1,64 @@
 # Awning: demo video script
 
-Target length: 2:45, hard limit under 3:00. Voiceover is recorded after the take, in English, no music. Numbers marked TODO(deploy) come from the final eval and must be filled in from [eval/results.md](../eval/results.md) before recording; say nothing that is not on screen or in the repo.
+Target 2:40, hard limit under 3:00. Narration is generated with Kokoro TTS (voice `af_heart`, open-source, runs locally). Browser scenes are recorded by Playwright against the hosted app. The only hand-recorded clip is the Claude.ai scene (Claude.ai is never recreated or mocked). No music. Captions are burned in and uploaded as SRT.
 
-## Shot list and voiceover
+Fictional shops: Maria's Cart (seeded demo) and Rosa's Taco Stand (onboarded on camera from an AI-generated image of a handwritten menu, labeled on screen; menu text in [eval/cases/taco-stand-lined-paper/menu.txt](../eval/cases/taco-stand-lined-paper/menu.txt)). Every payment is a real PayPal sandbox transaction.
 
-### 0:00-0:15 Problem (title card, then Maria's chalkboard photo)
+## Scenes
 
-Shots: plain title card "Awning" (text only, no third-party logos). Cut to a photo of the Maria's Cart chalkboard. On-screen text: "About 1 in 6 small businesses still has no website (Clutch, Aug 2025)".
+### 1. Hook, 0:00-0:14 (hand-recorded Claude.ai clip)
 
-Voiceover:
-1. "AI assistants are starting to shop for us. But about one in six small businesses still has no website, according to Clutch in August 2025."
-2. "A food truck with a chalkboard is invisible to every agent. Awning fixes that from a photo."
+Shot: Claude.ai chat with the Awning connector. Ask "Order a latte from Maria's Cart for 9am pickup, name Sam." The order card appears. Open the PayPal link, log in as the sandbox buyer, approve. Back in Claude, the card changes to Paid. Waits are sped up and labeled.
 
-### 0:15-1:15 One continuous take
+Narration: "I ask Claude for a latte from Maria's Cart, a coffee cart with no website. Claude places the order, I approve it in PayPal, and the money goes straight to Maria."
 
-Screen recording of the hosted app plus a phone for the merchant board. The take creates a NEW fictional shop, "Harbor Lane Sandwiches", from a chalkboard written with the menu in [eval/cases/chalkboard-sandwich-shop](../eval/cases/chalkboard-sandwich-shop/menu.txt). TODO(deploy): record/photograph the demo chalkboard. Maria's Cart stays published as the always-available demo for judges and is not the shop in this take. Waits are sped up and labeled on screen ("sped up 3x"); nothing is cut that hides a step.
+### 2. Problem, 0:14-0:28 (title card, stat card)
 
-| Time | Shot | Voiceover |
-|---|---|---|
-| 0:15-0:25 | `/start`: upload the Harbor Lane Sandwiches chalkboard photo. | "I photograph the menu and upload it." |
-| 0:25-0:40 | Extraction runs (label "sped up 3x" if needed). Review grid opens in AG Grid; low-confidence cells highlighted. | "Claude reads it. Anything it is unsure about is highlighted, and I cannot publish until I confirm it." |
-| 0:40-0:50 | Fix one cell, confirm. Enter pickup details; name the shop Harbor Lane Sandwiches; leave payee blank (Awning demo account). Publish. | "Prices stay in my control. I publish." |
-| 0:50-0:55 | Published page: storefront URL, QR code, MCP URL, admin link. Open the board on the phone. | "I get a storefront, a QR code, an endpoint for AI agents, and a live order board on my phone." |
-| 0:55-1:10 | Claude.ai with the Awning connector: "Order 2 grilled cheese sandwiches from Harbor Lane Sandwiches for 9am pickup, name Sam." Tool calls visible. Claude returns the PayPal link. | "A buyer asks their own assistant. It finds the shop, reads the menu, and builds the order. It only sends item IDs and quantities. The server sets the prices." |
-| 1:10-1:15 | Open the link, log in with the sandbox buyer, approve in PayPal. | "The buyer approves in PayPal." |
-| 1:15 | Return page shows paid; phone board pings with the new order. (Keep both in frame.) | "Paid. The merchant's board pings." |
+On screen: "Awning" title, then "About 1 in 6 small businesses still has no website (Clutch, Aug 2025)".
 
-Rehearse so the take lands at 1:15; if it runs long, trim speech, not steps, and label sped-up waits.
+Narration: "About one in six small businesses still has no website. AI assistants are starting to shop for people, and those businesses are invisible to them. Awning changes that with one photo."
 
-### 1:15-2:30 How it works
+### 3. Who does what, 0:28-0:52 (landing page)
 
-Shots: architecture diagram from [docs/architecture.md](architecture.md) rendered full screen (no third-party logos; plain boxes). Then short cuts of code or UI as named.
+Shot: landing page hero, scroll to the three cards.
 
-| Time | Shot | Voiceover |
-|---|---|---|
-| 1:15-1:35 | Diagram. | "Every channel goes through one tool layer: the Claude.ai connector over MCP, the built-in agent, and the human storefront. Orders are real PayPal Orders v2 transactions with the shop's own account as payee." |
-| 1:35-1:55 | Guardrails slide (text list from README): price integrity, payment state is PayPal's, merchant text is data, confidence gating. | "Guardrails are part of the design. Agents never set prices. No tool can mark an order paid; only a PayPal capture can. Menu text is treated as data, and we test with an adversarial menu." |
-| 1:55-2:10 | PayPal facts slide: third-party payee verified in sandbox; refunds for other merchants' captures return 403; webhooks arrive late so we capture on return. | "In the sandbox we verified that one app can pay many merchants. We also found refunds for other merchants are blocked, and webhooks run about two minutes late, so we capture on return and use webhooks as backup." |
-| 2:10-2:25 | Eval table from [eval/results.md](../eval/results.md). | "We measured extraction across Haiku, Sonnet and Opus: TODO(deploy): recall, price accuracy and chosen model, stated as synthetic-only unless real photos have been added. One extraction costs TODO(deploy): measured cost of the chosen model." |
-| 2:25-2:30 | Text: "Orders from a buyer's own assistant cost Awning $0 in AI." | "When the buyer's own assistant places the order, Awning pays nothing for the AI." |
+Narration: "Three people are involved. The shopper adds Awning to their AI once, and can order from every shop on it. The merchant needs a photo and the PayPal account they already have. And Awning is built for PayPal to run: reading a menu costs a few cents, the shopper's own AI does the talking, and PayPal earns its usual fee on every payment, so it can be free for merchants."
 
-### 2:30-2:45 Close
+### 4. Merchant onboarding, 0:52-1:40 (Playwright)
 
-Shot: hosted URL and the sandbox buyer login on a plain card (text only).
+| Shot | Narration |
+|---|---|
+| `/start`, upload Rosa's menu image. On-screen label: "Menu image: AI-generated for this demo". | "Rosa runs a taco stand. Here's her handwritten menu. For this demo the image is AI-generated. She uploads it." |
+| Extraction, then the AG Grid review (rows flagged by the model are highlighted; this menu had none). | "Claude reads the items, prices and options. Anything it isn't sure about gets highlighted for her to check before she can publish. This menu came through clean." |
+| Connect with PayPal, sandbox login (password field only, never the value), back to review showing Connected. | "To get paid, she connects PayPal by logging in. Awning never sees her password. PayPal tells us which account to pay." |
+| Publish; published page with storefront link, QR code, assistant link and board link. | "She publishes, and gets a storefront, a QR code, a link for AI assistants, and a live order board." |
 
-Voiceover: "Maria's Cart is a fictional demo merchant; every payment is a real PayPal sandbox transaction. Try it at https://awning-o5t9.onrender.com."
+### 5. A shopper orders from Rosa, 1:40-2:10 (Playwright)
+
+| Shot | Narration |
+|---|---|
+| `/try`: "Two carne asada tacos from Rosa's Taco Stand for noon, name Lee." Tool calls appear one by one. | "A shopper asks an AI assistant for two tacos. It finds Rosa's stand, reads the menu and creates the order. It only picks items. Awning sets the prices." |
+| PayPal sandbox approval, then the order page showing Paid, with Rosa's board updating beside it (chime added in editing; the board really plays it). | "The shopper approves in PayPal, and Rosa's board chimes with the paid order." |
+
+### 6. Safe by design, 2:10-2:28 (landing page section)
+
+Narration: "Agents never set prices, and no tool can mark an order paid. Only a PayPal capture can. Words on a menu are treated as data, never as instructions. And the AI never pays on its own. The shopper always approves in PayPal."
+
+### 7. Close, 2:28-2:40 (end card)
+
+On screen: hosted URL, "Judge sandbox login in the README", "Maria's Cart and Rosa's Taco Stand are fictional. Every payment is a real PayPal sandbox transaction. Awning is independent; PayPal and Claude are trademarks of their owners."
+
+Narration: "Maria's Cart and Rosa's Taco Stand are made up, but every payment you saw is a real PayPal sandbox transaction. Try it at the link below."
 
 ## Rules checklist
 
-- [ ] Under 3:00 (target 2:45)
+- [ ] Under 3:00
 - [ ] Public on YouTube
-- [ ] English voiceover (or subtitles)
 - [ ] No music and no copyrighted material
-- [ ] No third-party logos on title cards or thumbnail (product footage only)
-- [ ] Everything shown matches real behavior; no mocked screens, no staged payments
-- [ ] Sped-up waits labeled on screen; no cuts that hide a step
-- [ ] Stat is exactly "About 1 in 6 small businesses still has no website (Clutch, Aug 2025)"; no other statistics
-- [ ] Eval numbers match [eval/results.md](../eval/results.md); synthetic-only is stated if that is still true
-- [ ] "Maria's Cart is a fictional demo merchant" stated
-- [ ] No secrets, tokens or the .env visible; blur the admin link before uploading
-- [ ] Try-it URL on the closing card
-
-Date and checklist items marked TODO(deploy) cannot be completed until after the Render deploy and the live end-to-end check.
+- [ ] No third-party logos on our own cards or thumbnail; product screens only
+- [ ] Everything shown is real behavior; no mocked screens, no staged payments
+- [ ] Sped-up waits labeled; no cut hides a step
+- [ ] Only statistic: "About 1 in 6 small businesses still has no website (Clutch, Aug 2025)"
+- [ ] Fictional shops stated; AI-generated menu image labeled
+- [ ] No secrets visible: no passwords, tokens, .env or admin links
+- [ ] Try-it URL on the end card

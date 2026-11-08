@@ -13,6 +13,7 @@ from awning.models import Channel, Order, OrderLineRequest, PricedLine, PricedOr
 from awning.paypal import PayeeInvalidError, PayPalClient, PayPalError
 
 _PAYPAL_ERRORS = (PayPalError, httpx.HTTPError)
+from awning.pickup import friendly_pickup_time
 from awning.pricing import format_cents, price_order
 
 _POST_PAYMENT = ("paid", "ready", "picked_up")
@@ -137,7 +138,7 @@ class OrderService:
                 json.dumps([line.model_dump() for line in priced.lines]),
                 priced.total_cents,
                 customer_name.strip(),
-                pickup_time.strip(),
+                friendly_pickup_time(pickup_time),
                 note,
                 paypal_order.id,
                 paypal_order.approval_url,

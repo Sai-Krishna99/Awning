@@ -315,3 +315,10 @@ async def test_refund_failure_leaves_order_unchanged(ctx, service) -> None:
     with pytest.raises(RefundFailed):
         await service.refund(order.id, shop.admin_token)
     assert service.get(order.id) == paid
+
+
+async def test_place_order_stores_a_friendly_pickup_time(ctx, service) -> None:
+    shop = make_shop(ctx)
+    order = await place(service, shop, pickup_time="2026-11-09T09:00:00-06:00")
+    assert order.pickup_time == "Mon, Nov 9 · 9:00 AM"
+    assert service.get(order.id).pickup_time == "Mon, Nov 9 · 9:00 AM"
