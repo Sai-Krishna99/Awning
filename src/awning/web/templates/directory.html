@@ -6,6 +6,7 @@
   <h1 class="text-4xl sm:text-5xl font-bold text-green leading-tight">Shop directory</h1>
   <p class="mt-3 text-lg text-ink-soft">Every published shop. People can order on the web; AI agents find them through <a class="underline text-green" href="/connect">the connector</a>.</p>
 </section>
+<p class="mb-6 rounded-xl bg-cream-deep border border-line px-4 py-3 text-sm">Run a shop? <a class="underline text-green font-semibold" href="/start">Turn your menu into one.</a></p>
 {% if shops %}
 <div class="grid gap-4 sm:grid-cols-2">
   {% for shop in shops %}{% include "_shop_card.html" %}{% endfor %}
