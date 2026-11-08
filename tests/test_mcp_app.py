@@ -1,4 +1,7 @@
 import json
+import shutil
+import subprocess
+from pathlib import Path
 
 import pytest
 from mcp import Client
@@ -128,3 +131,29 @@ def test_card_formats_pickup_time_and_has_no_own_border() -> None:
     assert "function friendlyTime" in html
     assert ".card { padding: 14px 16px; }" in html
     assert "border-radius: 14px" not in html
+
+
+def _friendly_time_js() -> str:
+    source = (Path(__file__).resolve().parents[1] / "src/awning/web/mcp_card.html").read_text()
+    start = source.index("const DAYS")
+    end = source.index("\n}\n", source.index("function friendlyTime")) + 3
+    return source[start:end]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("2026-11-09 08:00", "Mon, Nov 9 · 8:00 AM"),
+        ("2026-11-09 08:30 AM", "Mon, Nov 9 · 8:30 AM"),
+        ("2026-11-09 8:30 pm", "Mon, Nov 9 · 8:30 PM"),
+        ("2026-11-09T13:05", "Mon, Nov 9 · 1:05 PM"),
+        ("2026-11-09 12:15 AM", "Mon, Nov 9 · 12:15 AM"),
+        ("tomorrow 8:00 AM", "tomorrow 8:00 AM"),
+        ("2026-11-09 13:00 PM", "2026-11-09 13:00 PM"),
+    ],
+)
+def test_card_friendly_time(raw: str, expected: str) -> None:
+    script = _friendly_time_js() + f"\nprocess.stdout.write(friendlyTime({json.dumps(raw)}));"
+    result = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
+    assert result.stdout == expected
