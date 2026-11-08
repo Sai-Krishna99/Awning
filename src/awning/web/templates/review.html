@@ -58,7 +58,7 @@
     </div>
     <p class="text-sm text-ink-soft">Or enter your merchant ID</p>
     {% endif %}
-    <label class="block"><span class="text-sm font-medium">PayPal merchant ID <span class="text-terracotta-deep font-semibold">(recommended)</span></span>
+    <label class="block"><span class="text-sm font-medium">PayPal merchant ID{% if not paypal_login_enabled %} <span class="text-terracotta-deep font-semibold">(recommended)</span>{% endif %}</span>
       <input class="field mt-1" name="payee_merchant_id" maxlength="20" autocomplete="off" value="{{ form.payee_merchant_id }}">
       <span class="block text-xs text-ink-soft mt-1">In PayPal it's the "Merchant account ID" under Account Settings → Business information. We check it before publishing.</span></label>
     <label class="block"><span class="text-sm font-medium">Or, PayPal email <span class="text-ink-soft font-normal">(if you can't find the ID)</span></span>
@@ -66,8 +66,8 @@
     <label class="flex items-start gap-3 text-sm">
       <input type="checkbox" name="payee_email_confirmed" class="mt-1 w-5 h-5" style="accent-color: var(--green)" {% if form.payee_email_confirmed %}checked{% endif %}>
       <span>I've double-checked this email. PayPal can't verify emails in advance, so a typo would send money to the wrong person.</span></label>
-    {% endif %}
     <p class="text-sm text-ink-soft">Leave everything blank to publish as a demo shop: payments go to Awning's PayPal sandbox demo account.</p>
+    {% endif %}
   </fieldset>
 
   <div>
