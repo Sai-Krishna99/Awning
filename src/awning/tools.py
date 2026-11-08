@@ -108,9 +108,13 @@ async def create_order(
         raise ToolError("shop_not_found", f"No published shop with slug '{shop_slug}'. Use find_shops.") from exc
     except OrderCreationFailed as exc:
         raise ToolError("payment_setup_failed", exc.reason) from exc
+    shop = ctx.catalog.get_by_id(order.shop_id)
     return {
         "order_id": order.id,
         "status": order.status,
+        "shop_name": shop.name if shop else "",
+        "pickup_time": order.pickup_time,
+        "pickup_location": shop.pickup_location if shop else "",
         "lines": [
             {
                 "item_id": line.item_id,
@@ -145,6 +149,7 @@ async def get_order_status(ctx: AppContext, order_id: str) -> dict:
         "shop_name": shop.name if shop else "",
         "pickup_time": order.pickup_time,
         "total": format_cents(order.total_cents),
+        "payment_held": order.status == "awaiting_payment" and order.payment_held,
     }
     if order.status == "awaiting_payment" and order.payment_held:
         result["message"] = PAYMENT_HELD_MESSAGE

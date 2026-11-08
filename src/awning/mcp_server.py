@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from awning import tools
 from awning.context import AppContext
+from awning.mcp_app import CARD_URI, build_apps
 
 _SPECS = {spec.name: spec for spec in tools.TOOL_SPECS}
 
@@ -68,6 +69,9 @@ class CreateOrderResult(BaseModel):
     lines: list[OrderLineOut]
     total: str
     currency: str
+    shop_name: str = ""
+    pickup_time: str = ""
+    pickup_location: str = ""
     approval_url: str | None
     status_url: str
     next_step: str
@@ -79,6 +83,7 @@ class OrderStatusResult(BaseModel):
     shop_name: str
     pickup_time: str
     total: str
+    payment_held: bool = False
     approval_url: str | None = None
     message: str
 
@@ -118,11 +123,7 @@ def build_transport_security(ctx: AppContext) -> TransportSecuritySettings:
 
 
 def build_mcp(ctx: AppContext) -> MCPServer:
-    mcp = MCPServer(
-        "Awning",
-        instructions="Find small local shops and place pickup orders that the buyer pays for with PayPal.",
-    )
-    read_only = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
+    apps = build_apps()
 
     async def run(name: str, **args) -> dict:
         try:
@@ -130,15 +131,10 @@ def build_mcp(ctx: AppContext) -> MCPServer:
         except tools.ToolError as exc:
             raise _raise(exc) from exc
 
-    @mcp.tool(name="find_shops", description=_SPECS["find_shops"].description, annotations=read_only)
-    async def find_shops(query: str, location_hint: str = "") -> FindShopsResult:
-        return FindShopsResult(**await run("find_shops", query=query, location_hint=location_hint))
-
-    @mcp.tool(name="get_menu", description=_SPECS["get_menu"].description, annotations=read_only)
-    async def get_menu(shop_slug: str) -> MenuResult:
-        return MenuResult(**await run("get_menu", shop_slug=shop_slug))
-
-    @mcp.tool(
+    @apps.tool(
+        resource_uri=CARD_URI,
+        visibility=["model", "app"],
+        meta={"ui/resourceUri": CARD_URI},
         name="create_order",
         description=_SPECS["create_order"].description,
         annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=True),
@@ -164,6 +160,21 @@ def build_mcp(ctx: AppContext) -> MCPServer:
             channel="agent",
         )
         return CreateOrderResult(**result)
+
+    mcp = MCPServer(
+        "Awning",
+        extensions=[apps],
+        instructions="Find small local shops and place pickup orders that the buyer pays for with PayPal.",
+    )
+    read_only = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
+
+    @mcp.tool(name="find_shops", description=_SPECS["find_shops"].description, annotations=read_only)
+    async def find_shops(query: str, location_hint: str = "") -> FindShopsResult:
+        return FindShopsResult(**await run("find_shops", query=query, location_hint=location_hint))
+
+    @mcp.tool(name="get_menu", description=_SPECS["get_menu"].description, annotations=read_only)
+    async def get_menu(shop_slug: str) -> MenuResult:
+        return MenuResult(**await run("get_menu", shop_slug=shop_slug))
 
     @mcp.tool(name="get_order_status", description=_SPECS["get_order_status"].description, annotations=read_only)
     async def get_order_status(order_id: str) -> OrderStatusResult:
