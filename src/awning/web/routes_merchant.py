@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 import secrets
@@ -22,7 +23,9 @@ from awning.web.routes_shop import _ctx, _not_found, templates
 
 logger = logging.getLogger(__name__)
 MAX_UPLOAD_BODY_BYTES = MAX_RAW_BYTES + 1024 * 1024
-TOO_LARGE_MESSAGE = "That photo is too large — please upload one under 15 MB."
+TOO_LARGE_MESSAGE = "That photo is too large — please upload one under 15 MB and 25 megapixels."
+TOO_SMALL_MESSAGE = "That photo is too small to read — try a closer, sharper photo."
+NOT_AN_IMAGE_MESSAGE = "That file isn't a photo we can read — try a JPG or PNG."
 
 
 class UploadSizeGuardRoute(APIRoute):
@@ -48,6 +51,12 @@ PUBLISH_ERRORS = {
     "needs_review": "Confirm the highlighted items first.",
     "no_items": "Add at least one item before publishing.",
     "missing_name": "Give your shop a name.",
+}
+SHOP_FIELD_LIMITS = {
+    "name": ("Shop name", 60),
+    "description": ("Description", 280),
+    "pickup_location": ("Pickup location", 120),
+    "pickup_hours": ("Pickup hours", 80),
 }
 
 
@@ -86,11 +95,13 @@ async def start_upload(request: Request, photo: UploadFile) -> Response:
     ctx = _ctx(request)
     raw = await photo.read(MAX_RAW_BYTES + 1)
     try:
-        image = prepare_image(raw)
+        image = await asyncio.to_thread(prepare_image, raw)
     except ImageRejected as exc:
         if exc.reason == "too_large":
             return _start_page(request, 413, TOO_LARGE_MESSAGE)
-        return _start_page(request, 400, "That file isn't a photo we can read — try a JPG or PNG.")
+        if exc.reason == "too_small":
+            return _start_page(request, 400, TOO_SMALL_MESSAGE)
+        return _start_page(request, 400, NOT_AN_IMAGE_MESSAGE)
     # Behind Render's proxy uvicorn runs with --forwarded-allow-ips='*' (render.yaml startCommand),
     # so request.client.host is the real client address, not the proxy.
     client_ip = request.client.host if request.client else "unknown"
@@ -145,6 +156,20 @@ def review_page(request: Request, token: str) -> Response:
     if shop.status == "published":
         return _no_store(RedirectResponse(f"/m/{token}", status_code=303))
     return _review_page(request, shop)
+
+
+def _field_length_error(form: dict) -> str | None:
+    for key, (label, limit) in SHOP_FIELD_LIMITS.items():
+        if len(form[key]) > limit:
+            return f"{label} must be {limit} characters or fewer."
+    return None
+
+
+def _item_errors_message(errors: list[dict]) -> str:
+    details = "; ".join(
+        err["message"] if err["field"] == "items" else f"row {err['row'] + 1}: {err['message']}" for err in errors
+    )
+    return f"Fix these items and save first — {details}."
 
 
 def _validation_errors(exc: ValidationError) -> list[dict]:
@@ -203,6 +228,8 @@ async def publish(request: Request, token: str) -> Response:
 
     if not form["name"]:
         return fail(PUBLISH_ERRORS["missing_name"])
+    if length_error := _field_length_error(form):
+        return fail(length_error)
     if not shop.items:
         return fail(PUBLISH_ERRORS["no_items"])
     if any(item.needs_review for item in shop.items):
@@ -233,8 +260,8 @@ async def publish(request: Request, token: str) -> Response:
         )
     except PublishError as exc:
         return fail(PUBLISH_ERRORS.get(exc.code, "This shop can't be published yet."))
-    except CatalogValidationError:
-        return fail("Some items have invalid prices — fix them and save first.")
+    except CatalogValidationError as exc:
+        return fail(_item_errors_message(exc.errors))
     return _no_store(RedirectResponse(f"/m/{token}", status_code=303))
 
 

@@ -3,7 +3,7 @@ import io
 import pytest
 from PIL import Image
 
-from awning.images import ImageRejected, prepare_image
+from awning.images import MAX_PIXELS, ImageRejected, prepare_image
 
 
 def _png(width: int, height: int) -> bytes:
@@ -76,3 +76,12 @@ def test_prepare_image_rejects_corrupt_heic() -> None:
     with pytest.raises(ImageRejected) as excinfo:
         prepare_image(data[:40] + b"\x00" * 100)
     assert excinfo.value.reason == "not_an_image"
+
+
+def test_prepare_image_rejects_over_25_megapixels() -> None:
+    assert MAX_PIXELS == 25_000_000
+    buffer = io.BytesIO()
+    Image.new("1", (5100, 5000)).save(buffer, "PNG")
+    with pytest.raises(ImageRejected) as excinfo:
+        prepare_image(buffer.getvalue())
+    assert excinfo.value.reason == "too_large"

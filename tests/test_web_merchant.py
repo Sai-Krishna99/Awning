@@ -1,3 +1,4 @@
+import asyncio
 import io
 import re
 
@@ -11,6 +12,7 @@ from pydantic import BaseModel, ValidationError
 from awning.extraction import (
     ExtractedItem, ExtractedMenu, ExtractedOption, ExtractionFailed, ExtractionResult, NoMenuFound,
 )
+from awning.images import prepare_image
 from awning.models import MenuItem
 from awning.paypal import PayPalError
 from awning.orders import OrderService
@@ -311,3 +313,62 @@ def test_item_name_cannot_break_out_of_script_block(web, ctx) -> None:
     config = page.split('id="review-config" type="application/json">')[1].split("</script>")[0]
     assert "<" not in config and "\\u003c/script\\u003e" in config
     assert "alert(1)" not in page.replace(config, "")
+
+
+def test_upload_decodes_image_off_event_loop(web, monkeypatch) -> None:
+    on_loop: list[bool] = []
+
+    def recording(raw):
+        try:
+            asyncio.get_running_loop()
+            on_loop.append(True)
+        except RuntimeError:
+            on_loop.append(False)
+        return prepare_image(raw)
+
+    monkeypatch.setattr("awning.web.routes_merchant.prepare_image", recording)
+    assert upload(web).status_code == 303
+    assert on_loop == [False]
+
+
+def test_upload_too_small_photo_message(web, stub) -> None:
+    response = upload(web, _png((150, 150)))
+    assert response.status_code == 400
+    assert "That photo is too small to read — try a closer, sharper photo." in response.text
+    assert stub.calls == 0
+
+
+@pytest.mark.parametrize(("field", "limit", "message"), [
+    ("name", 60, "Shop name must be 60 characters or fewer."),
+    ("description", 280, "Description must be 280 characters or fewer."),
+    ("pickup_location", 120, "Pickup location must be 120 characters or fewer."),
+    ("pickup_hours", 80, "Pickup hours must be 80 characters or fewer."),
+])
+def test_publish_enforces_field_lengths(web, ctx, field, limit, message) -> None:
+    token = draft(web)
+    confirm_all(ctx, token)
+    response = web.post(f"/m/{token}/publish", data={**FORM, field: "x" * (limit + 1)})
+    assert response.status_code == 422
+    assert message in response.text
+    assert ctx.catalog.get_by_admin_token(token).status == "draft"
+    assert web.post(f"/m/{token}/publish", data={**FORM, field: "x" * limit}).status_code == 303
+
+
+def test_publish_shows_item_field_errors(web, ctx) -> None:
+    shop = ctx.catalog.create_draft([
+        MenuItem(id="", name="Latte", price_cents=450),
+        MenuItem(id="", name="N" * 81, price_cents=300),
+    ])
+    response = web.post(f"/m/{shop.admin_token}/publish", data=FORM)
+    assert response.status_code == 422
+    assert "row 2: name must be 1-80 characters" in response.text
+    assert "invalid prices" not in response.text
+
+
+def test_upload_over_pixel_cap_names_both_limits(web, stub) -> None:
+    buffer = io.BytesIO()
+    Image.new("1", (5100, 5000)).save(buffer, "PNG")
+    response = upload(web, buffer.getvalue())
+    assert response.status_code == 413
+    assert "That photo is too large — please upload one under 15 MB and 25 megapixels." in response.text
+    assert stub.calls == 0

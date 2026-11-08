@@ -12,6 +12,8 @@ from awning.orders import OrderService
 from awning.paypal import PayPalClient
 from awning.ratelimit import RateLimiter
 
+ANTHROPIC_TIMEOUT_S = 90
+
 
 @dataclass
 class AppContext:
@@ -51,7 +53,7 @@ def build_context(settings: Settings) -> AppContext:
         db, catalog, paypal, events, settings.public_url, settings.third_party_refunds
     )
     anthropic_client = AsyncAnthropic(
-        api_key=settings.anthropic_api_key, base_url=settings.anthropic_base_url
+        api_key=settings.anthropic_api_key, base_url=settings.anthropic_base_url, timeout=ANTHROPIC_TIMEOUT_S
     )
     extractor = MenuExtractor(
         anthropic_client, settings.extraction_model, settings.extraction_effort

@@ -31,9 +31,9 @@
   <h2 class="text-2xl font-bold text-green">Open your shop</h2>
   {% if error %}<p class="rounded-xl bg-red-50 border border-red-200 text-red-800 px-4 py-3 text-sm" role="alert">{{ error }}</p>{% endif %}
   <label class="block"><span class="text-sm font-medium">Shop name</span>
-    <input class="field mt-1" name="name" maxlength="80" required value="{{ form.name }}"></label>
+    <input class="field mt-1" name="name" maxlength="60" required value="{{ form.name }}"></label>
   <label class="block"><span class="text-sm font-medium">Short description <span class="text-ink-soft font-normal">(optional)</span></span>
-    <input class="field mt-1" name="description" maxlength="200" value="{{ form.description }}"></label>
+    <input class="field mt-1" name="description" maxlength="280" value="{{ form.description }}"></label>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="block"><span class="text-sm font-medium">Pickup location</span>
       <input class="field mt-1" name="pickup_location" maxlength="120" placeholder="e.g. Corner of 5th and Main" value="{{ form.pickup_location }}"></label>
