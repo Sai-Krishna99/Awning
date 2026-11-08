@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 
 from awning.context import AppContext
+from awning.mcp_server import build_mcp, build_transport_security
 
 health_router = APIRouter()
 
@@ -14,10 +15,16 @@ def healthz() -> dict[str, bool]:
 
 
 def create_app(ctx: AppContext) -> FastAPI:
+    mcp = build_mcp(ctx)
+    mcp_app = mcp.streamable_http_app(
+        stateless_http=True, json_response=True, transport_security=build_transport_security(ctx)
+    )
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Startup work from later tasks hooks in here.
-        yield
+        async with mcp.session_manager.run():
+            yield
 
     app = FastAPI(lifespan=lifespan)
     app.state.ctx = ctx
@@ -25,5 +32,6 @@ def create_app(ctx: AppContext) -> FastAPI:
     for router in (health_router,):  # later tasks append routers here
         app.include_router(router)
 
-    # Catch-all mounts (e.g. the MCP app at "/") must stay LAST.
+    # Catch-all mount: serves exactly /mcp and shadows anything registered after it, so keep LAST.
+    app.mount("/", mcp_app)
     return app
