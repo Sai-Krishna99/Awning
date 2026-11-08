@@ -1,6 +1,6 @@
 {
   "name": "Maria's Cart",
-  "description": "Espresso and pastries from a little green cart. Everything is made fresh each morning.",
+  "description": "Fictional demo cart for the Awning hackathon entry. Espresso and pastries from a little green cart. Everything is made fresh each morning.",
   "pickup_location": "Corner of Elm & 3rd, by the fountain",
   "pickup_hours": "Mon-Sat 7am-2pm",
   "items": [

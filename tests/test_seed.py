@@ -30,3 +30,10 @@ def test_seed_runs_on_startup(client) -> None:
 def test_demo_payee_settings_blank_is_none() -> None:
     s = load_settings({"PAYPAL_DEMO_PAYEE_EMAIL": "", "PAYPAL_DEMO_PAYEE_MERCHANT_ID": "M"})
     assert s.demo_payee_email is None and s.demo_payee_merchant_id == "M"
+
+
+def test_seed_storefront_says_fictional(client) -> None:
+    with client:
+        shop = client.app.state.ctx.catalog.get_published("marias-cart")
+        assert shop.description.startswith("Fictional demo cart for the Awning hackathon entry. ")
+        assert "Fictional demo cart for the Awning hackathon entry." in client.get("/s/marias-cart").text

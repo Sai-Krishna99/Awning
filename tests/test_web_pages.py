@@ -104,3 +104,10 @@ def test_connect_lists_real_order_statuses(tmp_path):
     html = client.get("/connect").text
     assert "cancelled" not in html
     assert "awaiting payment, paid, ready, picked up or refunded" in html
+
+
+def test_connect_chatgpt_note_is_soft(tmp_path):
+    _, client = make_client(tmp_path)
+    html = client.get("/connect").text
+    assert "write tools are limited on most ChatGPT plans; Claude.ai is the recommended path" in html
+    assert "Business, Enterprise and Edu" not in html

@@ -20,7 +20,7 @@ Screen recording of the hosted app plus a phone for the merchant board. The take
 |---|---|---|
 | 0:15-0:25 | `/start`: upload the Harbor Lane Sandwiches chalkboard photo. | "I photograph the menu and upload it." |
 | 0:25-0:40 | Extraction runs (label "sped up 3x" if needed). Review grid opens in AG Grid; low-confidence cells highlighted. | "Claude reads it. Anything it is unsure about is highlighted, and I cannot publish until I confirm it." |
-| 0:40-0:50 | Fix one cell, confirm. Enter pickup details; name the shop Harbor Lane Sandwiches; leave payee blank (Awning demo merchant). Publish. | "Prices stay in my control. I publish." |
+| 0:40-0:50 | Fix one cell, confirm. Enter pickup details; name the shop Harbor Lane Sandwiches; leave payee blank (Awning demo account). Publish. | "Prices stay in my control. I publish." |
 | 0:50-0:55 | Published page: storefront URL, QR code, MCP URL, admin link. Open the board on the phone. | "I get a storefront, a QR code, an endpoint for AI agents, and a live order board on my phone." |
 | 0:55-1:10 | Claude.ai with the Awning connector: "Order 2 grilled cheese sandwiches from Harbor Lane Sandwiches for 9am pickup, name Sam." Tool calls visible. Claude returns the PayPal link. | "A buyer asks their own assistant. It finds the shop, reads the menu, and builds the order. It only sends item IDs and quantities. The server sets the prices." |
 | 1:10-1:15 | Open the link, log in with the sandbox buyer, approve in PayPal. | "The buyer approves in PayPal." |
