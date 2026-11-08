@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 from fastapi.sse import ServerSentEvent
 
@@ -110,3 +111,39 @@ def test_refund_unpaid_is_409_and_failure_is_502(ctx, web, paypal, shop):
     paypal.refund_capture = boom
     response = web.post(url)
     assert response.status_code == 502 and response.json()["message"].startswith("refund failed")
+
+
+def _age(ctx, order_id: str, minutes: int) -> None:
+    created = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
+    ctx.db.conn.execute("UPDATE orders SET created_at = ? WHERE id = ?", (created, order_id))
+    ctx.db.conn.commit()
+
+
+def test_board_hides_stale_awaiting_orders(ctx, web, shop):
+    stale, fresh, old_paid = place(web, shop), place(web, shop), place(web, shop)
+    pay(web, old_paid)
+    _age(ctx, stale["order_id"], 61)
+    _age(ctx, fresh["order_id"], 59)
+    _age(ctx, old_paid["order_id"], 600)
+    ids = {o["id"] for o in web.get(f"/api/m/{shop.admin_token}/orders").json()["orders"]}
+    assert ids == {fresh["order_id"], old_paid["order_id"]}
+
+
+def test_status_change_publishes_on_event_loop(ctx, web, shop):
+    order = place(web, shop)
+    pay(web, order)
+    on_loop: list[bool] = []
+    original = ctx.events.publish
+
+    def recording(shop_id, event):
+        try:
+            asyncio.get_running_loop()
+            on_loop.append(True)
+        except RuntimeError:
+            on_loop.append(False)
+        original(shop_id, event)
+
+    ctx.events.publish = recording
+    response = web.post(f"/api/m/{shop.admin_token}/orders/{order['order_id']}/status", json={"status": "ready"})
+    assert response.status_code == 200
+    assert on_loop == [True]

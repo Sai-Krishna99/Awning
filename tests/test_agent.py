@@ -271,3 +271,12 @@ def test_rate_limited_returns_429(ctx, web) -> None:
     ctx.agent_limiter_ip = RateLimiter(30, 3600)
     ctx.agent_limiter_global = RateLimiter(0, 86400)
     assert web.post(url, json={"text": "hi"}).status_code == 429
+
+
+def test_session_creation_rate_limited(ctx, web) -> None:
+    assert (ctx.agent_session_limiter_ip.max_events, ctx.agent_session_limiter_ip.window_s) == (20, 3600)
+    ctx.agent_session_limiter_ip = RateLimiter(1, 3600)
+    assert web.post("/api/agent/sessions").status_code == 200
+    limited = web.post("/api/agent/sessions")
+    assert limited.status_code == 429
+    assert limited.json()["error"]["code"] == "rate_limited"

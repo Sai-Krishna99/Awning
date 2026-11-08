@@ -6,6 +6,7 @@ from awning.context import AppContext, build_context
 from awning.models import MenuItem, Shop, ShopDetails
 from awning.orders import OrderService
 from awning.paypal import PayPalError
+from awning.ratelimit import RateLimiter
 from awning.web.app import create_app
 from fakes import FakePayPal
 
@@ -233,3 +234,17 @@ def test_qr_svg(web, shop):
 def test_static_assets_served(web):
     assert web.get("/static/shop.js").status_code == 200
     assert web.get("/static/app.css").status_code == 200
+
+
+def test_order_creation_rate_limited_per_ip_and_globally(ctx, web, shop, paypal):
+    assert (ctx.order_limiter_ip.max_events, ctx.order_limiter_ip.window_s) == (20, 3600)
+    assert (ctx.order_limiter_global.max_events, ctx.order_limiter_global.window_s) == (500, 86400)
+    ctx.order_limiter_ip = RateLimiter(1, 3600)
+    place(web, shop)
+    limited = web.post(f"/api/s/{shop.slug}/orders", json=order_body(shop))
+    assert limited.status_code == 429
+    assert limited.json()["error"]["code"] == "rate_limited"
+    assert len(paypal.calls_to("create_order")) == 1
+    ctx.order_limiter_ip = RateLimiter(20, 3600)
+    ctx.order_limiter_global = RateLimiter(0, 86400)
+    assert web.post(f"/api/s/{shop.slug}/orders", json=order_body(shop)).status_code == 429

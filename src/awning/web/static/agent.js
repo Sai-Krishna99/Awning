@@ -165,7 +165,10 @@
   async function ensureSession() {
     if (sessionId) return;
     const response = await fetch("/api/agent/sessions", { method: "POST" });
-    if (!response.ok) throw friendlyError("Couldn't start a chat. Please refresh and try again.");
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw friendlyError((body && body.error && body.error.message) || "Couldn't start a chat. Please refresh and try again.");
+    }
     sessionId = (await response.json()).session_id;
   }
 

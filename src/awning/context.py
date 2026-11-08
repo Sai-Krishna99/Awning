@@ -27,7 +27,16 @@ class AppContext:
     agent_sessions: SessionStore = field(default_factory=SessionStore)
     agent_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(30, 3600))
     agent_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(1000, 86400))
+    agent_session_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(20, 3600))
+    order_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(20, 3600))
+    order_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(500, 86400))
     agent: DemoAgent = field(init=False)
+
+    def allow_order(self, client_ip: str | None) -> bool:
+        """Per-IP plus global limit on unauthenticated order creation; global only when the IP is unknown."""
+        if client_ip is not None and not self.order_limiter_ip.allow(client_ip):
+            return False
+        return self.order_limiter_global.allow("global")
 
 
 def build_context(settings: Settings) -> AppContext:

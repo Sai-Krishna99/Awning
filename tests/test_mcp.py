@@ -6,6 +6,7 @@ from awning.config import load_settings
 from awning.context import AppContext, build_context
 from awning.mcp_server import build_mcp
 from awning.models import MenuItem, Shop, ShopDetails
+from awning.ratelimit import RateLimiter
 from awning.web.app import create_app
 
 INIT = {
@@ -99,3 +100,32 @@ async def test_mcp_malformed_items_reports_field(ctx: AppContext, shop: Shop) ->
         )
         assert result.is_error
         assert "quantity" in result.content[0].text
+
+
+def _order_args(shop: Shop) -> dict:
+    return {
+        "shop_slug": shop.slug,
+        "items": [{"item_id": shop.items[0].id, "quantity": 1}],
+        "pickup_time": "8am",
+        "customer_name": "Ann",
+    }
+
+
+async def test_mcp_create_order_global_limit_without_client_ip(ctx: AppContext, shop: Shop) -> None:
+    ctx.order_limiter_global = RateLimiter(0, 86400)
+    async with Client(build_mcp(ctx)) as client:
+        result = await client.call_tool("create_order", _order_args(shop))
+        assert result.is_error
+        assert "rate_limited" in result.content[0].text
+    assert ctx.orders.list_for_shop(shop.id) == []
+
+
+def test_mcp_create_order_per_ip_limit_over_http(ctx: AppContext, shop: Shop) -> None:
+    ctx.order_limiter_ip = RateLimiter(0, 3600)
+    call = {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "create_order", "arguments": _order_args(shop)}}
+    with TestClient(create_app(ctx)) as client:
+        response = client.post("/mcp", json=call, headers=HEADERS)
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert result["isError"] is True
+    assert "rate_limited" in result["content"][0]["text"]

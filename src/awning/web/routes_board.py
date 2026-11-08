@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import AsyncIterable
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -16,6 +17,7 @@ router = APIRouter()
 
 PAYPAL_ACTIVITY_URL = "https://www.sandbox.paypal.com/myaccount/activities/"
 PRIVATE_FIELDS = {"approval_url", "capture_id", "paypal_order_id"}
+AWAITING_VISIBLE_FOR = timedelta(minutes=60)
 
 
 class StatusRequest(BaseModel):
@@ -82,7 +84,8 @@ def list_orders(request: Request, token: str) -> Response:
     shop = _shop(request, token)
     if shop is None:
         return _unknown_shop()
-    orders = _ctx(request).orders.list_for_shop(shop.id)
+    cutoff = datetime.now(timezone.utc) - AWAITING_VISIBLE_FOR
+    orders = _ctx(request).orders.list_for_shop(shop.id, awaiting_since=cutoff)
     return _json({"orders": [_board_order(order) for order in orders]})
 
 
@@ -96,7 +99,7 @@ async def order_events(
 
 
 @router.post("/api/m/{token}/orders/{order_id}/status")
-def set_order_status(request: Request, token: str, order_id: str, payload: StatusRequest) -> Response:
+async def set_order_status(request: Request, token: str, order_id: str, payload: StatusRequest) -> Response:
     try:
         order = _ctx(request).orders.set_status(order_id, token, payload.status)
     except (ShopNotFound, OrderNotFound):

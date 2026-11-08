@@ -27,6 +27,7 @@ templates.env.filters["money"] = format_cents
 
 router = APIRouter()
 
+ORDER_RATE_LIMIT_MESSAGE = "Too many orders right now. Please try again later."
 STATUS_LABELS = {
     "awaiting_payment": "Awaiting payment",
     "paid": "Paid",
@@ -122,6 +123,9 @@ def storefront(request: Request, slug: str) -> Response:
 @router.post("/api/s/{slug}/orders")
 async def create_web_order(request: Request, slug: str, body: WebOrderRequest) -> Response:
     ctx = _ctx(request)
+    # request.client.host is the real client address behind Render's proxy (see routes_merchant.start_upload).
+    if not ctx.allow_order(request.client.host if request.client else "unknown"):
+        return _error(429, "rate_limited", ORDER_RATE_LIMIT_MESSAGE)
     try:
         order = await ctx.orders.place_order(
             slug, body.lines, body.customer_name, body.pickup_time, body.note, "web"

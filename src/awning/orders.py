@@ -255,10 +255,17 @@ class OrderService:
             self._publish(order, "order_updated")
             return order
 
-    def list_for_shop(self, shop_id: str, limit: int = 100) -> list[Order]:
+    def list_for_shop(
+        self, shop_id: str, limit: int = 100, awaiting_since: datetime | None = None
+    ) -> list[Order]:
+        """Newest first. With awaiting_since, unpaid orders created before it are left out."""
+        where, params = "shop_id = ?", [shop_id]
+        if awaiting_since is not None:
+            where += " AND (status != 'awaiting_payment' OR created_at >= ?)"
+            params.append(awaiting_since.isoformat())
         rows = self.db.conn.execute(
-            "SELECT * FROM orders WHERE shop_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?",
-            (shop_id, limit),
+            f"SELECT * FROM orders WHERE {where} ORDER BY created_at DESC, rowid DESC LIMIT ?",
+            (*params, limit),
         ).fetchall()
         return [self._to_order(row) for row in rows]
 

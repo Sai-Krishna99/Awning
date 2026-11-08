@@ -29,8 +29,11 @@ def try_page(request: Request) -> Response:
 
 
 @router.post("/api/agent/sessions")
-def create_session(request: Request) -> Response:
-    session = _ctx(request).agent_sessions.create()
+async def create_session(request: Request) -> Response:
+    ctx = _ctx(request)
+    if not ctx.agent_session_limiter_ip.allow(request.client.host if request.client else "unknown"):
+        return _error(429, "rate_limited", "Too many new chats from your network. Please try again later.")
+    session = ctx.agent_sessions.create()
     return JSONResponse({"session_id": session.id}, headers=NO_STORE)
 
 
