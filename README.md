@@ -16,7 +16,7 @@ Entry for the PayPal AI Hackathon 2026.
 
 About 1 in 6 small businesses still has no website ([Clutch, Aug 2025](https://clutch.co/press-releases/smb-websites-2025); [BusinessWire copy](https://www.businesswire.com/news/home/20250821848152/en)). AI assistants are starting to shop for people, and big platforms are making their merchants reachable by agents. A food truck, home baker or market stall with a chalkboard and no catalog is invisible to all of it.
 
-Awning is for those merchants. They photograph their menu and about a minute later have a mobile storefront with PayPal checkout, an MCP endpoint any assistant can use, and a listing in a public directory. They need no catalog, no website and no developer.
+Awning is for those merchants. They photograph their menu and, in minutes, have a mobile storefront with PayPal checkout, an MCP endpoint any assistant can use, and a listing in a public directory. They need no catalog, no website and no developer.
 
 ## How it works
 
@@ -44,7 +44,7 @@ No setup is needed for the first two options.
 
 1. **Shop as a human.** Open the hosted demo, choose Maria's Cart in the directory, add items, pay with PayPal.
 2. **Watch an agent buy.** Open `/try` and ask for something from Maria's Cart. The agent searches, reads the menu and returns an approval link.
-3. **Use your own Claude.ai.** In Claude.ai: Customize, Connectors, Add custom connector, enter `TODO(deploy): hosted URL/mcp`, set Authentication to "No sign-in", Add. In a chat, click **+**, Connectors, toggle Awning on. The first tool call asks for approval (Allow once or Always allow). The Free plan allows one custom connector. Then ask: "Order 2 oat lattes from Maria's Cart for 9am pickup, name Sam."
+3. **Use your own Claude.ai.** In Claude.ai: Customize, Connectors, Add custom connector, enter `TODO(deploy): hosted URL/mcp`, set Authentication to "No sign-in", Add. In a chat, click **+**, Connectors, toggle Awning on. The first tool call asks for approval (Allow once or Always allow). The Free plan allows one custom connector. Then ask: "Order 2 lattes with oat milk from Maria's Cart for 9am pickup, name Sam."
 
 Also try making your own shop: upload any menu photo at `/start`. Leaving the payee blank sends money to the Awning demo merchant.
 
@@ -81,7 +81,7 @@ AI:
 - A tool-using demo agent over the same tool layer, with bounded tool rounds and history: [agent.py](src/awning/agent.py), [tools.py](src/awning/tools.py).
 - An extraction eval harness with hand-labeled ground truth, scoring item recall and precision, price accuracy, option recall, prompt-injection behavior, latency and cost: [eval/](eval/), results in [eval/results.md](eval/results.md).
 
-Engineering: 203 automated tests ([tests/](tests/)) using fakes for PayPal and Anthropic; the app's payments were also exercised against the live PayPal sandbox (see below).
+Engineering: 203 automated tests ([tests/](tests/)) using fakes for PayPal and Anthropic; during development the app itself created real PayPal sandbox orders and approval links, through the storefront API and through the built-in demo agent (real Claude API calls: `find_shops`, `get_menu`, `create_order`). Capture to a different merchant account, third-party refund behavior and webhook delivery were verified live with spike scripts (see PayPal integration details). TODO(deploy): live end-to-end payment through the hosted app.
 
 ### Design
 
@@ -151,7 +151,9 @@ Verified live against the PayPal sandbox ([docs/research/paypal.md](docs/researc
 
 Maria's Cart is a fictional demo merchant; every payment is a real PayPal sandbox transaction.
 
-- Real: the PayPal sandbox Orders, captures, refunds and webhooks; the Claude extraction; the MCP server; the agent flows; the SSE board.
+The site footer says: "Sandbox demo: every payment is a real PayPal sandbox transaction. No real money moves."
+
+- Real: PayPal sandbox order creation and approval links produced by the app itself (storefront API and built-in demo agent, using the real Claude API); capture to a different merchant account, the 403 on third-party refunds and webhook delivery, verified with spike scripts ([docs/research/paypal.md](docs/research/paypal.md)); the Claude extraction, MCP server and SSE board code. Not yet done: a full payment captured through the deployed app. TODO(deploy): live end-to-end payment through the hosted app.
 - Demo: Maria's Cart and its menu ([seed/marias-cart.json](seed/marias-cart.json)), and the sandbox accounts. No real money moves and no real business or user is represented. Awning has no users beyond the hackathon.
 - Not claimed: PayPal Store Sync, Agent Ready or other PayPal merchant products. Awning uses the public Orders API only.
 
@@ -179,7 +181,7 @@ uv run uvicorn awning.main:app --reload
 uv run pytest            # 203 tests, no network or keys needed
 ```
 
-`.env.example` lists every setting. At minimum: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_PLATFORM_MERCHANT_ID`, `ANTHROPIC_API_KEY`. `PAYPAL_WEBHOOK_ID` is needed only to accept webhooks, and `PAYPAL_DEMO_PAYEE_*` only for the demo merchant. Run the extraction eval with `uv run python -m eval.run_eval --models claude-haiku-5-5 --cases eval/cases`.
+`.env.example` lists every setting. At minimum: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_PLATFORM_MERCHANT_ID`, `ANTHROPIC_API_KEY`. `PAYPAL_WEBHOOK_ID` is needed only to accept webhooks, and `PAYPAL_DEMO_PAYEE_*` only for the demo merchant. Run the extraction eval with `uv run python -m eval.run_eval --models claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5 --cases eval/cases` (prefix with `env -u ANTHROPIC_BASE_URL` only if that variable is set in your shell).
 
 ## Project structure
 

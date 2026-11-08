@@ -20,7 +20,7 @@ Buyers can order three ways: from their own assistant (for example a Claude.ai c
 - PayPal Orders v2 with per-merchant `payee`, idempotent capture, webhooks with signature verification, refunds, and JS SDK v5 with a redirect fallback.
 - Claude vision with structured outputs for extraction, an MCP server on the official Python SDK, and a tool-using demo agent on the same tool layer.
 - Guardrails: server-side pricing, no payment-state tools for agents, merchant text treated as data, confidence gating, rate limits.
-- An extraction eval harness with hand-labeled cases, 203 unit tests, and live PayPal sandbox verification.
+- An extraction eval harness with hand-labeled cases, 203 unit tests, and PayPal sandbox spike scripts that verified third-party capture, refund behavior and webhook delivery.
 
 ### Challenges
 
@@ -32,7 +32,7 @@ Buyers can order three ways: from their own assistant (for example a Claude.ai c
 
 ### Accomplishments
 
-TODO(deploy): fill from the final live end-to-end run and eval (for example the real-photo eval numbers, once added). Until then, accurate statements: photo to published shop works; orders via MCP, demo agent and storefront create real sandbox PayPal orders; synthetic eval cases pass for all three models (see [eval/results.md](../eval/results.md)).
+TODO(deploy): fill from the final live end-to-end run and eval (for example the real-photo eval numbers, once added). Until then, accurate statements: photo to published shop works; orders via MCP, demo agent and storefront create real sandbox PayPal orders; the app itself created real sandbox PayPal orders and approval links via the storefront API and the built-in demo agent; the eval's 2 synthetic cases pass for all three models (see [eval/results.md](../eval/results.md)); real-photo eval cases are still awaiting photos. TODO(deploy): live end-to-end payment through the hosted app.
 
 ### What we learned
 

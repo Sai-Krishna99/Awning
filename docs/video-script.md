@@ -14,15 +14,15 @@ Voiceover:
 
 ### 0:15-1:15 One continuous take
 
-Screen recording of the hosted app plus a phone for the merchant board. Waits are sped up and labeled on screen ("sped up 3x"); nothing is cut that hides a step.
+Screen recording of the hosted app plus a phone for the merchant board. The take creates a NEW fictional shop, "Harbor Lane Sandwiches", from a chalkboard written with the menu in [eval/cases/chalkboard-sandwich-shop](../eval/cases/chalkboard-sandwich-shop/menu.txt). TODO(deploy): record/photograph the demo chalkboard. Maria's Cart stays published as the always-available demo for judges and is not the shop in this take. Waits are sped up and labeled on screen ("sped up 3x"); nothing is cut that hides a step.
 
 | Time | Shot | Voiceover |
 |---|---|---|
-| 0:15-0:25 | `/start`: upload the chalkboard photo. | "I photograph the menu and upload it." |
+| 0:15-0:25 | `/start`: upload the Harbor Lane Sandwiches chalkboard photo. | "I photograph the menu and upload it." |
 | 0:25-0:40 | Extraction runs (label "sped up 3x" if needed). Review grid opens in AG Grid; low-confidence cells highlighted. | "Claude reads it. Anything it is unsure about is highlighted, and I cannot publish until I confirm it." |
-| 0:40-0:50 | Fix one cell, confirm. Enter pickup details; leave payee blank (Awning demo merchant). Publish. | "Prices stay in my control. I publish." |
+| 0:40-0:50 | Fix one cell, confirm. Enter pickup details; name the shop Harbor Lane Sandwiches; leave payee blank (Awning demo merchant). Publish. | "Prices stay in my control. I publish." |
 | 0:50-0:55 | Published page: storefront URL, QR code, MCP URL, admin link. Open the board on the phone. | "I get a storefront, a QR code, an endpoint for AI agents, and a live order board on my phone." |
-| 0:55-1:10 | Claude.ai with the Awning connector: "Order 2 oat lattes from Maria's Cart for 9am, name Sam." Tool calls visible. Claude returns the PayPal link. | "A buyer asks their own assistant. It finds the shop, reads the menu, and builds the order. It only sends item IDs and quantities. The server sets the prices." |
+| 0:55-1:10 | Claude.ai with the Awning connector: "Order 2 grilled cheese sandwiches from Harbor Lane Sandwiches for 9am pickup, name Sam." Tool calls visible. Claude returns the PayPal link. | "A buyer asks their own assistant. It finds the shop, reads the menu, and builds the order. It only sends item IDs and quantities. The server sets the prices." |
 | 1:10-1:15 | Open the link, log in with the sandbox buyer, approve in PayPal. | "The buyer approves in PayPal." |
 | 1:15 | Return page shows paid; phone board pings with the new order. (Keep both in frame.) | "Paid. The merchant's board pings." |
 
