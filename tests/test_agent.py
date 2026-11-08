@@ -257,7 +257,7 @@ def test_unknown_session_and_empty_text(web) -> None:
 
 def test_rate_limited_returns_429(ctx, web) -> None:
     assert (ctx.agent_limiter_ip.max_events, ctx.agent_limiter_ip.window_s) == (30, 3600)
-    assert (ctx.agent_limiter_global.max_events, ctx.agent_limiter_global.window_s) == (1000, 86400)
+    assert (ctx.agent_limiter_global.max_events, ctx.agent_limiter_global.window_s) == (300, 86400)
     ctx.agent, messages = scripted_agent(ctx, [reply("end_turn", text("Hi!"))])
     ctx.agent_limiter_ip = RateLimiter(1, 3600)
     session_id = web.post("/api/agent/sessions").json()["session_id"]

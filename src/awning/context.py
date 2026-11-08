@@ -25,10 +25,10 @@ class AppContext:
     orders: OrderService
     extractor: MenuExtractor
     upload_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(5, 3600))
-    upload_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(200, 86400))
+    upload_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(100, 86400))
     agent_sessions: SessionStore = field(default_factory=SessionStore)
     agent_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(30, 3600))
-    agent_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(1000, 86400))
+    agent_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(300, 86400))
     agent_session_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(20, 3600))
     order_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(20, 3600))
     order_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(500, 86400))

@@ -150,6 +150,7 @@ def test_sixth_upload_rate_limited(web, stub) -> None:
 
 
 def test_global_limit_checked_before_model(web, ctx, stub) -> None:
+    assert (ctx.upload_limiter_global.max_events, ctx.upload_limiter_global.window_s) == (100, 86400)
     ctx.upload_limiter_global.max_events = 0
     assert upload(web).status_code == 429
     assert stub.calls == 0
