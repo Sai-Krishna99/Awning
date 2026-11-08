@@ -1,0 +1,29 @@
+{
+  "name": "Maria's Cart",
+  "description": "Espresso and pastries from a little green cart. Everything is made fresh each morning.",
+  "pickup_location": "Corner of Elm & 3rd, by the fountain",
+  "pickup_hours": "Mon-Sat 7am-2pm",
+  "items": [
+    {"name": "Latte", "description": "Double espresso with steamed milk", "category": "Coffee", "price_cents": 450,
+     "options": [
+       {"name": "Large", "price_delta_cents": 100},
+       {"name": "Oat milk", "price_delta_cents": 75},
+       {"name": "Extra shot", "price_delta_cents": 100}]},
+    {"name": "Cappuccino", "description": "Espresso with thick foam", "category": "Coffee", "price_cents": 425,
+     "options": [
+       {"name": "Large", "price_delta_cents": 100},
+       {"name": "Oat milk", "price_delta_cents": 75}]},
+    {"name": "Drip Coffee", "description": "Fresh-brewed house blend", "category": "Coffee", "price_cents": 300,
+     "options": [{"name": "Large", "price_delta_cents": 75}]},
+    {"name": "Cold Brew", "description": "Steeped for 18 hours, served over ice", "category": "Coffee", "price_cents": 475,
+     "options": [{"name": "Oat milk", "price_delta_cents": 75}]},
+    {"name": "Chai Latte", "description": "Spiced black tea with steamed milk", "category": "Tea", "price_cents": 450,
+     "options": [
+       {"name": "Large", "price_delta_cents": 100},
+       {"name": "Oat milk", "price_delta_cents": 75}]},
+    {"name": "Butter Croissant", "description": "Flaky, baked this morning", "category": "Pastries", "price_cents": 375, "options": []},
+    {"name": "Blueberry Muffin", "description": "Loaded with wild blueberries", "category": "Pastries", "price_cents": 350, "options": []},
+    {"name": "Cinnamon Roll", "description": "Warm, with cream cheese glaze", "category": "Pastries", "price_cents": 450,
+     "options": [{"name": "Extra glaze", "price_delta_cents": 50}]}
+  ]
+}

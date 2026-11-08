@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: awning
+    runtime: python
+    plan: starter # a persistent disk requires a paid plan
+    region: oregon
+    buildCommand: uv sync --frozen --no-dev
+    startCommand: uv run --no-sync uvicorn awning.main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips='*'
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      # AWNING_PUBLIC_URL is intentionally unset: Settings falls back to the
+      # RENDER_EXTERNAL_URL that Render sets automatically.
+      - key: AWNING_DB_PATH
+        value: /var/data/awning.db
+      - key: PAYPAL_BASE_URL
+        value: https://api-m.sandbox.paypal.com
+      - key: AWNING_EXTRACTION_MODEL
+        value: claude-opus-5-5
+      - key: AWNING_AGENT_MODEL
+        value: claude-opus-5-5
+      - key: AWNING_EXTRACTION_EFFORT
+        value: low
+      - key: AWNING_AGENT_EFFORT
+        value: low
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: PAYPAL_PLATFORM_MERCHANT_ID
+        sync: false
+      - key: PAYPAL_DEMO_PAYEE_EMAIL
+        sync: false
+      - key: PAYPAL_DEMO_PAYEE_MERCHANT_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+    disk:
+      name: awning-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -5,6 +5,7 @@ from fastapi import APIRouter, FastAPI
 
 from awning.context import AppContext
 from awning.mcp_server import build_mcp, build_transport_security
+from awning.seed import DEFAULT_SEED_PATH, seed_demo_shop
 
 health_router = APIRouter()
 
@@ -22,7 +23,12 @@ def create_app(ctx: AppContext) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        # Startup work from later tasks hooks in here.
+        seed_demo_shop(
+            ctx.catalog,
+            DEFAULT_SEED_PATH,
+            payee_merchant_id=ctx.settings.demo_payee_merchant_id,
+            payee_email=ctx.settings.demo_payee_email,
+        )
         async with mcp.session_manager.run():
             yield
 

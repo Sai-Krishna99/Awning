@@ -13,6 +13,8 @@ class Settings:
     paypal_base_url: str
     paypal_webhook_id: str | None
     paypal_platform_merchant_id: str
+    demo_payee_merchant_id: str | None
+    demo_payee_email: str | None
     anthropic_api_key: str
     anthropic_base_url: str
     extraction_model: str
@@ -53,6 +55,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         paypal_base_url=env.get("PAYPAL_BASE_URL") or "https://api-m.sandbox.paypal.com",
         paypal_webhook_id=env.get("PAYPAL_WEBHOOK_ID") or None,
         paypal_platform_merchant_id=env.get("PAYPAL_PLATFORM_MERCHANT_ID", ""),
+        demo_payee_merchant_id=env.get("PAYPAL_DEMO_PAYEE_MERCHANT_ID") or None,
+        demo_payee_email=env.get("PAYPAL_DEMO_PAYEE_EMAIL") or None,
         anthropic_api_key=env.get("ANTHROPIC_API_KEY", ""),
         anthropic_base_url=env.get("AWNING_ANTHROPIC_BASE_URL") or "https://api.anthropic.com",
         extraction_model=env.get("AWNING_EXTRACTION_MODEL") or "claude-opus-5-5",
