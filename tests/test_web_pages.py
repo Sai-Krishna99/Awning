@@ -13,7 +13,7 @@ def make_client(tmp_path, **extra) -> tuple:
 def test_index_shows_mcp_and_ctas(tmp_path):
     ctx, client = make_client(tmp_path, AWNING_PUBLIC_URL="https://awning.example")
     html = client.get("/").text
-    assert "merchants with a chalkboard" in html
+    assert "any AI assistant can order from you" in html and "Who does what" in html
     for href in ('href="/start"', 'href="/try"', 'href="/connect"', 'href="/directory"'):
         assert href in html
     assert "Turn your menu into a shop" in html and "Watch an agent order" in html

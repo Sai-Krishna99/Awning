@@ -10,9 +10,13 @@ AI assistants are starting to shop for people, and big platforms are making thei
 
 ### What it does
 
-A merchant photographs a menu. Claude vision extracts items, prices and options, flagging anything uncertain. The merchant confirms flagged cells in an AG Grid review table and publishes. They get a mobile storefront with PayPal checkout, an MCP endpoint, a QR code, a directory listing and a live order board.
+**Shopper.** Adds the Awning connector to their AI once. No account, no login. Their AI finds the shop, picks the items and hands back a PayPal link, and they approve in PayPal like any other payment. Nothing to install per shop.
 
-Buyers can order three ways: from their own assistant (for example a Claude.ai custom connector), from a built-in demo agent, or on the storefront. Money goes to the merchant's own PayPal account. Maria's Cart is a fictional demo merchant; every payment is a real PayPal sandbox transaction.
+**Merchant.** Takes a photo of the menu, checks what the AI read, connects their PayPal account and publishes. No website, no developer. Orders show up on their board with a sound, and the money lands in their PayPal account.
+
+**PayPal.** Awning is built to be a PayPal service. Its cost per merchant is one AI call to read the menu (about 3 cents on our largest model, on our test menus; real-photo numbers pending). The shopping conversation runs on the shopper's own AI. PayPal earns its usual fee on every payment.
+
+Under the hood: Claude vision extracts items, prices and options, flagging anything uncertain. The merchant confirms flagged cells in an AG Grid review table and publishes. They get a mobile storefront with PayPal checkout, an MCP endpoint, a QR code, a directory listing and a live order board. Buyers can order from their own assistant (for example a Claude.ai custom connector), from a built-in demo agent, or on the storefront. Maria's Cart is a fictional demo merchant; every payment is a real PayPal sandbox transaction. The AI never pays on its own: the shopper always approves in PayPal.
 
 ### How we built it
 
@@ -20,7 +24,10 @@ Buyers can order three ways: from their own assistant (for example a Claude.ai c
 - PayPal Orders v2 with per-merchant `payee`, idempotent capture, webhooks with signature verification, refunds, and JS SDK v5 with a redirect fallback.
 - Claude vision with structured outputs for extraction, an MCP server on the official Python SDK, and a tool-using demo agent on the same tool layer.
 - Guardrails: server-side pricing, no payment-state tools for agents, merchant text treated as data, confidence gating, rate limits.
-- An extraction eval harness with hand-labeled cases, 232 unit tests, and PayPal sandbox spike scripts that verified third-party capture, refund behavior and webhook delivery.
+- Log in with PayPal for merchants: an OpenID Connect code flow whose `payer_id` becomes the shop's payee merchant ID.
+- An MCP App: a small read-only order status card in Claude.ai (items, total, pickup, live status). It has no payment controls; payment always happens in PayPal.
+- A live end-to-end test: real Claude orders through the hosted MCP connector, and a headless browser approves the payment in the sandbox.
+- An extraction eval harness with hand-labeled cases, 274 automated tests, and PayPal sandbox spike scripts that verified third-party capture, refund behavior and webhook delivery.
 
 ### Challenges
 
@@ -32,7 +39,7 @@ Buyers can order three ways: from their own assistant (for example a Claude.ai c
 
 ### Accomplishments
 
-TODO(deploy): fill from the final live end-to-end run and eval (for example the real-photo eval numbers, once added). Until then, accurate statements: photo to published shop works; orders through the storefront API and the built-in demo agent created real sandbox PayPal orders and approval links; the eval's 2 synthetic cases pass for all three models (see [eval/results.md](../eval/results.md)); real-photo eval cases are still awaiting photos. On the hosted app on 2026-11-08, live sandbox payments went through end to end: storefront checkout and an order placed from Claude.ai through the custom connector, each captured once and received in the Maria's Cart sandbox merchant account.
+TODO(deploy): add the real-photo eval numbers once photos exist. Accurate statements today: photo to published shop works; orders through the storefront API and the built-in demo agent created real sandbox PayPal orders and approval links; the eval's 2 synthetic cases pass for all three models (see [eval/results.md](../eval/results.md)); real-photo eval cases are still awaiting photos. On the hosted app on 2026-11-08, live sandbox payments went through end to end: storefront checkout and an order placed from Claude.ai through the custom connector, each captured once and received in the Maria's Cart sandbox merchant account. Also verified on 2026-11-08: the order status card renders in Claude.ai, Connect with PayPal returns a `payer_id` equal to the Maria's Cart merchant ID, and the automated live order test passes.
 
 ### What we learned
 
