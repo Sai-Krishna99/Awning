@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Awning{% endblock %}</title>
+  <meta name="description" content="{% block description %}Turn a menu photo into a shop that people and AI agents can buy from.{% endblock %}">
+  <meta name="theme-color" content="#1F4D3A">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: {
+        cream: "var(--cream)", "cream-deep": "var(--cream-deep)", ink: "var(--ink)", "ink-soft": "var(--ink-soft)",
+        green: { DEFAULT: "var(--green)", deep: "var(--green-deep)" },
+        terracotta: { DEFAULT: "var(--terracotta)", deep: "var(--terracotta-deep)" },
+        line: "var(--line)"
+      } } }
+    };
+  </script>
+  <link rel="stylesheet" href="/static/app.css">
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col">
+  <header>
+    <div class="awning-stripes"></div>
+    <div class="awning-scallop"></div>
+    <div class="mx-auto max-w-3xl px-4 pt-5 flex items-center justify-between">
+      <a href="/" class="font-display text-xl font-bold text-green tracking-tight">Awning</a>
+      {% block header_right %}{% endblock %}
+    </div>
+  </header>
+  {% block banner %}{% endblock %}
+  <main class="flex-1 mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="border-t border-line bg-cream-deep">
+    <div class="mx-auto max-w-3xl px-4 py-6 text-sm text-ink-soft">
+      <p>Sandbox demo: every payment is a real PayPal sandbox transaction. No real money moves.</p>
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
