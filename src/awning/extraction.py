@@ -9,6 +9,7 @@ from awning.images import PreparedImage
 from awning.models import ItemOption, MenuItem
 
 MAX_PRICE_CENTS = 100_000
+MAX_OPTION_DELTA_CENTS = 50_000
 FALLBACK_MODEL = "claude-opus-4-8"
 FALLBACK_BETA = "server-side-fallback-2026-06-01"
 
@@ -126,8 +127,8 @@ def _to_menu_item(item: ExtractedItem, currency_guess: str | None) -> MenuItem:
         notes.append("price out of range")
     options = []
     for option in item.options:
-        if option.price_delta_cents < 0:
-            notes.append(f"dropped option '{option.name}' (negative price)")
+        if not 0 <= option.price_delta_cents <= MAX_OPTION_DELTA_CENTS:
+            notes.append(f"dropped option '{option.name}' (price out of range)")
         else:
             options.append(ItemOption(id="", name=option.name, price_delta_cents=option.price_delta_cents))
     review_note = item.note or (

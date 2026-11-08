@@ -127,3 +127,13 @@ async def test_extract_unparseable_is_extraction_failure() -> None:
     client, _ = _stub_client(None)
     with pytest.raises(ExtractionFailed):
         await MenuExtractor(client, "claude-opus-5-5", "low").extract(IMAGE)
+
+
+def test_to_menu_items_drops_absurd_option_deltas() -> None:
+    menu = _menu([_item(options=[
+        ExtractedOption(name="Large", price_delta_cents=50000),
+        ExtractedOption(name="Gold", price_delta_cents=10**9),
+    ])])
+    item = to_menu_items(menu)[0]
+    assert [o.name for o in item.options] == ["Large"]
+    assert item.needs_review and "Gold" in item.review_note
