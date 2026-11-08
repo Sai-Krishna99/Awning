@@ -103,3 +103,52 @@ def test_get_published_hides_drafts(ctx: AppContext) -> None:
     assert ctx.catalog.get_published("marias-cart") is None
     ctx.catalog.publish(draft.admin_token, make_details())
     assert ctx.catalog.get_published("marias-cart").id == draft.id
+
+
+def test_publish_rejects_invalid_items(ctx: AppContext) -> None:
+    draft = ctx.catalog.create_draft([make_item(), make_item(price=0), make_item(name="")])
+    with pytest.raises(CatalogValidationError) as exc:
+        ctx.catalog.publish(draft.admin_token, make_details())
+    assert {(e["row"], e["field"]) for e in exc.value.errors} == {(1, "price_cents"), (2, "name")}
+    assert ctx.catalog.get_by_id(draft.id).status == "draft"
+
+
+def publish_shop(ctx: AppContext, name: str, items: list[str], description: str = "", location: str = "") -> str:
+    draft = ctx.catalog.create_draft([make_item(n) for n in items])
+    details = make_details(name).model_copy(update={"description": description, "pickup_location": location})
+    return ctx.catalog.publish(draft.admin_token, details).id
+
+
+def test_search_ranks_by_matched_tokens(ctx: AppContext) -> None:
+    one = publish_shop(ctx, "Alpha", ["Latte"])
+    two = publish_shop(ctx, "Beta", ["Latte", "Bagel"])
+    assert [s.id for s in ctx.catalog.search("latte bagel")] == [two, one]
+
+
+def test_search_ties_newest_first_and_limit(ctx: AppContext) -> None:
+    older = publish_shop(ctx, "Alpha", ["Latte"])
+    newer = publish_shop(ctx, "Beta", ["Latte"])
+    assert [s.id for s in ctx.catalog.search("latte")] == [newer, older]
+    assert [s.id for s in ctx.catalog.search("latte", limit=1)] == [newer]
+    assert len(ctx.catalog.search("", limit=1)) == 1
+
+
+def test_search_matches_description_and_location(ctx: AppContext) -> None:
+    by_desc = publish_shop(ctx, "Alpha", ["Tea"], description="Fresh sourdough")
+    by_loc = publish_shop(ctx, "Beta", ["Tea"], location="Riverside pier")
+    assert [s.id for s in ctx.catalog.search("sourdough")] == [by_desc]
+    assert [s.id for s in ctx.catalog.search("riverside")] == [by_loc]
+
+
+def test_search_folds_plurals(ctx: AppContext) -> None:
+    shop_id = publish_shop(ctx, "Alpha", ["Croissants", "Lattes"])
+    assert [s.id for s in ctx.catalog.search("croissant")] == [shop_id]
+    assert [s.id for s in ctx.catalog.search("latte")] == [shop_id]
+    assert [s.id for s in ctx.catalog.search("lattes")] == [shop_id]
+
+
+def test_search_ignores_stopwords(ctx: AppContext) -> None:
+    coffee = publish_shop(ctx, "Brew Cart", ["Coffee"], location="by the park")
+    publish_shop(ctx, "Other", ["Tea"], description="the best the finest")
+    assert [s.id for s in ctx.catalog.search("coffee near the park")] == [coffee]
+    assert len(ctx.catalog.search("the near please")) == 2

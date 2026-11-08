@@ -60,8 +60,22 @@ def _slugify(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower().replace("'", "")).strip("-")[:40].strip("-")
 
 
+_STOPWORDS = frozenset(
+    "the a an near at in on for of and or to me my from with some any please order buy get shop shops place places".split()
+)
+
+
 def _tokens(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def _variants(token: str) -> set[str]:
+    forms = {token}
+    if token.endswith("s") and len(token) > 2:
+        forms.add(token[:-1])
+    if token.endswith("es") and len(token) > 3:
+        forms.add(token[:-2])
+    return forms
 
 
 class Catalog:
@@ -108,6 +122,7 @@ class Catalog:
             raise PublishError("no_items")
         if any(i.needs_review for i in shop.items):
             raise PublishError("needs_review")
+        _validate_items(shop.items)
         base_slug = _slugify(details.name)
         if not base_slug:
             raise PublishError("missing_name")
@@ -133,16 +148,15 @@ class Catalog:
         return self._one("id = ?", (shop.id,))
 
     def search(self, query: str, limit: int = 10) -> list[Shop]:
-        query_tokens = set(_tokens(query))
+        query_tokens = {t for t in _tokens(query) if t not in _STOPWORDS}
         shops = self.list_published(limit=10_000)
         if not query_tokens:
             return shops[:limit]
         scored = []
         for shop in shops:
-            haystack = set(
-                _tokens(" ".join([shop.name, shop.description, shop.pickup_location, *(i.name for i in shop.items)]))
-            )
-            matched = len(query_tokens & haystack)
+            text = " ".join([shop.name, shop.description, shop.pickup_location, *(i.name for i in shop.items)])
+            haystack = {form for token in _tokens(text) for form in _variants(token)}
+            matched = sum(1 for token in query_tokens if _variants(token) & haystack)
             if matched:
                 scored.append((matched, shop))
         scored.sort(key=lambda pair: pair[0], reverse=True)
