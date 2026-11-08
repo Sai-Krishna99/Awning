@@ -90,3 +90,17 @@ h1, h2, h3, .font-display { font-family: "Fraunces", Georgia, serif; font-optica
 }
 .review-grid .confirm-btn:hover { background: var(--terracotta-deep); }
 .review-grid .ok-mark { color: var(--green); font-weight: 600; font-size: .85rem; }
+
+.order-card { padding: 1rem 1.1rem; }
+.order-card.is-awaiting { opacity: .6; background: var(--cream-deep); }
+.order-card.is-done { opacity: .75; }
+.order-card.flash { animation: order-flash 2.4s ease-out; }
+@keyframes order-flash {
+  0% { box-shadow: 0 0 0 0 rgba(200, 85, 61, .8); background: #FFF1D6; transform: scale(1.02); }
+  60% { box-shadow: 0 0 0 14px rgba(200, 85, 61, 0); }
+  100% { background: #fff; transform: scale(1); }
+}
+.badge { display: inline-block; padding: .1rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 600; background: var(--cream-deep); border: 1px solid var(--line); }
+.badge-ai { background: #E7F0EA; color: var(--green-deep); border-color: var(--green); }
+.order-actions .btn { min-height: 44px; padding: .5rem 1rem; flex: 1; }
+@media (prefers-reduced-motion: reduce) { .order-card.flash { animation: none; background: #FFF1D6; } }

@@ -228,6 +228,26 @@ class OrderService:
         row = self.db.conn.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
         return self._to_order(row) if row else None
 
+    def get_by_paypal_order_id(self, paypal_order_id: str) -> Order | None:
+        row = self.db.conn.execute(
+            "SELECT * FROM orders WHERE paypal_order_id = ?", (paypal_order_id,)
+        ).fetchone()
+        return self._to_order(row) if row else None
+
+    def get_by_capture_id(self, capture_id: str) -> Order | None:
+        row = self.db.conn.execute("SELECT * FROM orders WHERE capture_id = ?", (capture_id,)).fetchone()
+        return self._to_order(row) if row else None
+
+    async def mark_refunded(self, order_id: str) -> Order:
+        async with self._lock(order_id):
+            order = self._require(order_id)
+            if order.status not in _POST_PAYMENT:
+                return order
+            self._update(order_id, status="refunded")
+            order = self.get(order_id)
+            self._publish(order, "order_updated")
+            return order
+
     def list_for_shop(self, shop_id: str, limit: int = 100) -> list[Order]:
         rows = self.db.conn.execute(
             "SELECT * FROM orders WHERE shop_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?",
