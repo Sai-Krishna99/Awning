@@ -33,3 +33,17 @@ None.
 ## How to reproduce
 
 `env -u ANTHROPIC_BASE_URL uv run python -m eval.run_agent_eval --models claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5`
+
+## All runs, including development runs
+
+Every run is kept in `eval/agent_runs/` so the numbers can be checked.
+
+| run | models | result | note |
+|---|---|---|---|
+| `20261108T170026Z` | Haiku | 2/3 | Development run with an earlier scorer. It flagged "$5.00" in the multi-turn reply; that is a cappuccino ($4.25) plus oat milk ($0.75), a correct price. |
+| `20261108T170113Z` | Haiku, Sonnet, Opus | Haiku 2/3, Sonnet 3/3, Opus 3/3 | Development run with the same earlier scorer. It flagged "$5.50" in Haiku's robustness reply; that is a large latte ($4.50 + $1.00), a correct price. |
+| `20261108T170251Z` | Haiku, Sonnet, Opus | 3/3 each | The run reported above, with the final scorer. |
+| `20261108T170736Z` | Haiku | 3/3 | Repeat run, final scorer. |
+| `20261108T170754Z` | Haiku | 3/3 | Repeat run, final scorer. |
+
+The earlier scorer only accepted base menu prices and the order total. The final scorer also accepts item-plus-option prices and line totals, which fixed both false flags. With the final scorer, Haiku passed 9/9 across the last three runs; no run produced a wrong order, a wrong total or a missing payment link.
