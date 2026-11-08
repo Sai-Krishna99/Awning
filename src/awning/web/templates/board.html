@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Orders | {{ shop.name }} | Awning{% endblock %}
+{% block head %}<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">{% endblock %}
+{% block content %}
+<section id="board" data-token="{{ token }}" data-shop="{{ shop.name }}">
+  <div class="flex items-end justify-between gap-3 mb-4">
+    <div>
+      <p class="text-sm font-semibold text-terracotta-deep uppercase tracking-wide">Order board</p>
+      <h1 class="text-3xl sm:text-4xl font-bold text-green leading-tight">{{ shop.name }}</h1>
+    </div>
+    <span id="live" class="text-sm text-ink-soft" role="status" aria-live="polite">Connecting…</span>
+  </div>
+  <button id="sound-toggle" type="button" class="btn btn-accent w-full mb-4">Tap to turn on order sounds</button>
+  <p id="board-error" class="hidden mb-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 text-sm" role="alert"></p>
+  <div id="orders" class="grid gap-3" aria-live="polite"></div>
+  <p id="empty" class="hidden card p-5 text-center text-ink-soft">No orders yet. New orders appear here the moment they're paid.</p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/board.js"></script>{% endblock %}

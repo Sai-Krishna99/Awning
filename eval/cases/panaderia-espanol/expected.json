@@ -1,0 +1,60 @@
+{
+  "items": [
+    {
+      "name": "Concha",
+      "price_cents": 250,
+      "options": []
+    },
+    {
+      "name": "Cuernito",
+      "price_cents": 300,
+      "options": []
+    },
+    {
+      "name": "Bolillo",
+      "price_cents": 150,
+      "options": []
+    },
+    {
+      "name": "Empanada de Pina",
+      "price_cents": 325,
+      "options": []
+    },
+    {
+      "name": "Cafe de Olla",
+      "price_cents": 300,
+      "options": [
+        "Chico",
+        "Grande"
+      ]
+    },
+    {
+      "name": "Chocolate Caliente",
+      "price_cents": 450,
+      "options": []
+    },
+    {
+      "name": "Agua de Jamaica",
+      "price_cents": 350,
+      "options": []
+    },
+    {
+      "name": "Pastel de Tres Leches",
+      "price_cents": 600,
+      "options": []
+    },
+    {
+      "name": "Flan",
+      "price_cents": 500,
+      "options": []
+    },
+    {
+      "name": "Churros",
+      "price_cents": 550,
+      "options": [
+        "Media Orden",
+        "Orden Completa"
+      ]
+    }
+  ]
+}

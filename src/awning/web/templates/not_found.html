@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Not found | Awning{% endblock %}
+{% block content %}
+<section class="card p-8 text-center">
+  <h1 class="text-3xl font-bold text-green">We couldn't find that {{ what }}</h1>
+  <p class="mt-3 text-ink-soft">The link may be mistyped, or the {{ what }} may have been removed.</p>
+</section>
+{% endblock %}

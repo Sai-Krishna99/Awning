@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awning order</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --green: #1F4D3A; --green-soft: #E7F0EA; --terracotta: #A8432E; --terracotta-soft: #FBE9E3;
+  --ink: #26332C; --ink-soft: #5E6B63; --line: #E6DCCB;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --green: #8FD1AE; --green-soft: #1E3A2D; --terracotta: #F0A08C; --terracotta-soft: #4A2A22;
+    --ink: #EDEBE6; --ink-soft: #B3BAB5; --line: #3A4540;
+  }
+}
+:root[data-theme="dark"] {
+  --green: #8FD1AE; --green-soft: #1E3A2D; --terracotta: #F0A08C; --terracotta-soft: #4A2A22;
+  --ink: #EDEBE6; --ink-soft: #B3BAB5; --line: #3A4540;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: transparent; }
+body { font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif); font-size: 14px; line-height: 1.4; color: var(--color-text-primary, var(--ink)); padding: 4px; }
+.card { padding: 14px 16px; }
+.head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.shop { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+.pill { flex: none; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--terracotta-soft); color: var(--terracotta); }
+.pill.paid, .pill.ready, .pill.picked_up { background: var(--green-soft); color: var(--green); }
+.pill.refunded { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+ul { list-style: none; margin: 10px 0 0; padding: 0; }
+li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+li .opts { color: var(--ink-soft); font-size: 12px; display: block; }
+li .amt { flex: none; font-variant-numeric: tabular-nums; }
+.total { display: flex; justify-content: space-between; border-top: 1px solid var(--color-border-primary, var(--line)); margin-top: 8px; padding-top: 8px; font-weight: 600; }
+.meta { margin-top: 8px; color: var(--ink-soft); }
+.meta strong { color: inherit; font-weight: 600; }
+.note { margin-top: 8px; font-size: 12px; color: var(--ink-soft); }
+button { margin-top: 12px; font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--green); background: transparent; color: var(--green); cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--terracotta); outline-offset: 2px; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="card" id="card" hidden>
+  <div class="head"><div class="shop" id="shop"></div><div class="pill" id="pill" role="status" aria-live="polite"></div></div>
+  <ul id="lines"></ul>
+  <div class="total"><span>Total</span><span id="total"></span></div>
+  <div class="meta" id="pickup"></div>
+  <div class="note" id="held" hidden>This payment is on hold until the merchant accepts it.</div>
+  <div class="note" id="stopped" hidden>Stopped checking. Ask Claude for the latest status.</div>
+  <button type="button" id="view" hidden>View order page</button>
+</div>
+<script type="module">
+/*__EXT_APPS_BUNDLE__*/
+const { App, applyDocumentTheme, applyHostStyleVariables, applyHostFonts } = __extApps;
+
+const LABELS = {
+  awaiting_payment: "Awaiting payment", paid: "Paid", ready: "Ready for pickup",
+  picked_up: "Picked up", refunded: "Refunded",
+};
+const TERMINAL = new Set(["picked_up", "refunded"]);
+const FAST_MS = 3000, SLOW_MS = 10000, FAST_WINDOW_MS = 60000, MAX_MS = 15 * 60000;
+
+const $ = (id) => document.getElementById(id);
+const app = new App({ name: "awning-order-card", version: "1.0.0" }, {});
+let order = null;
+let pollTimer = null;
+let pollStart = 0;
+let pollingFor = null;
+
+function money(amount) { return "$" + amount; }
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function friendlyTime(raw) {
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::\d{2})?$/.exec(raw || "");
+  if (!m) return raw || "";
+  const [year, month, day, hour, minute] = m.slice(1).map(Number);
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) return raw;
+  const weekday = DAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+  const clock = ((hour % 12) || 12) + ":" + String(minute).padStart(2, "0") + " " + (hour < 12 ? "AM" : "PM");
+  return weekday + ", " + MONTHS[month - 1] + " " + day + " \u00b7 " + clock;
+}
+
+function render() {
+  if (!order) return;
+  $("card").hidden = false;
+  $("shop").textContent = order.shop_name || "Your order";
+  const held = order.status === "awaiting_payment" && order.payment_held === true;
+  const pill = $("pill");
+  pill.textContent = held ? "Payment held" : (LABELS[order.status] || order.status);
+  pill.className = "pill " + (held ? "" : order.status);
+  $("held").hidden = !held;
+  const list = $("lines");
+  list.replaceChildren();
+  for (const line of order.lines || []) {
+    const item = document.createElement("li");
+    const name = document.createElement("span");
+    name.textContent = line.quantity + " × " + line.name;
+    if (line.options && line.options.length) {
+      const opts = document.createElement("span");
+      opts.className = "opts";
+      opts.textContent = line.options.join(", ");
+      name.appendChild(opts);
+    }
+    const amt = document.createElement("span");
+    amt.className = "amt";
+    amt.textContent = money(line.line_total);
+    item.append(name, amt);
+    list.appendChild(item);
+  }
+  $("total").textContent = money(order.total);
+  const where = order.pickup_location ? " at " + order.pickup_location : "";
+  $("pickup").textContent = "Pickup " + friendlyTime(order.pickup_time) + where;
+  $("view").hidden = !/^https?:\/\//.test(order.status_url || "");
+}
+
+function stopPolling(timedOut) {
+  clearTimeout(pollTimer);
+  pollTimer = null;
+  if (timedOut) $("stopped").hidden = false;
+}
+
+async function poll() {
+  pollTimer = null;
+  if (!order || TERMINAL.has(order.status)) return;
+  const elapsed = Date.now() - pollStart;
+  if (elapsed >= MAX_MS) return stopPolling(true);
+  try {
+    const result = await app.callServerTool({ name: "get_order_status", arguments: { order_id: order.order_id } });
+    const data = result && !result.isError ? result.structuredContent : null;
+    if (data && data.order_id === order.order_id) {
+      order = { ...order, status: data.status, payment_held: data.payment_held === true,
+        shop_name: data.shop_name || order.shop_name, pickup_time: data.pickup_time || order.pickup_time };
+      render();
+    }
+  } catch (err) { /* transient; try again on the next tick */ }
+  if (TERMINAL.has(order.status)) return stopPolling(false);
+  const delay = Date.now() - pollStart < FAST_WINDOW_MS ? FAST_MS : SLOW_MS;
+  pollTimer = setTimeout(poll, delay);
+}
+
+function startPolling() {
+  if (pollingFor === order.order_id) return;
+  pollingFor = order.order_id;
+  stopPolling(false);
+  $("stopped").hidden = true;
+  pollStart = Date.now();
+  if (!TERMINAL.has(order.status)) pollTimer = setTimeout(poll, FAST_MS);
+}
+
+function applyContext(ctx) {
+  if (!ctx) return;
+  if (ctx.theme) applyDocumentTheme(ctx.theme);
+  if (ctx.styles && ctx.styles.variables) applyHostStyleVariables(ctx.styles.variables);
+  if (ctx.styles && ctx.styles.css && ctx.styles.css.fonts) applyHostFonts(ctx.styles.css.fonts);
+}
+
+app.ontoolresult = (params) => {
+  const data = params && params.structuredContent;
+  if (!data || !data.order_id) return;
+  order = data;
+  render();
+  startPolling();
+};
+app.onhostcontextchanged = applyContext;
+$("view").addEventListener("click", () => {
+  if (order && order.status_url) app.openLink({ url: order.status_url });
+});
+
+await app.connect();
+applyContext(app.getHostContext());
+</script>
+</body>
+</html>

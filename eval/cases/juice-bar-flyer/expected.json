@@ -1,0 +1,58 @@
+{
+  "items": [
+    {
+      "name": "Green Machine",
+      "price_cents": 800,
+      "options": [
+        "12oz",
+        "16oz"
+      ]
+    },
+    {
+      "name": "Carrot Ginger",
+      "price_cents": 750,
+      "options": [
+        "12oz",
+        "16oz"
+      ]
+    },
+    {
+      "name": "Orange Squeeze",
+      "price_cents": 650,
+      "options": [
+        "12oz",
+        "16oz"
+      ]
+    },
+    {
+      "name": "Berry Blast",
+      "price_cents": 950,
+      "options": []
+    },
+    {
+      "name": "Mango Tango",
+      "price_cents": 925,
+      "options": []
+    },
+    {
+      "name": "Peanut Butter Banana",
+      "price_cents": 1000,
+      "options": []
+    },
+    {
+      "name": "Acai Bowl",
+      "price_cents": 1300,
+      "options": []
+    },
+    {
+      "name": "Ginger Shot",
+      "price_cents": 300,
+      "options": []
+    },
+    {
+      "name": "Wheatgrass Shot",
+      "price_cents": 350,
+      "options": []
+    }
+  ]
+}

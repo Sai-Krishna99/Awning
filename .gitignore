@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+awning.db*
+
+# Local planning files
+.superpowers/
+docs/superpowers/
+tasks/

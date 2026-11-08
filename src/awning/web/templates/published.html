@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ shop.name }} is open | Awning{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<section class="mb-6">
+  <p class="text-sm font-semibold text-terracotta-deep uppercase tracking-wide">You're open</p>
+  <h1 class="text-4xl sm:text-5xl font-bold text-green leading-tight">{{ shop.name }}</h1>
+</section>
+
+<p class="mb-6 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 font-medium" role="note">Save this page — it's your private admin link.</p>
+
+{% if shop.is_demo_payee %}
+<p class="mb-6 rounded-xl bg-cream-deep border border-line px-4 py-3 text-sm">You didn't add a PayPal account, so payments go to Awning's sandbox demo account.</p>
+{% endif %}
+
+<section class="card p-5 sm:p-6 mb-5 grid gap-5 sm:grid-cols-[1fr_auto] items-center">
+  <div>
+    <h2 class="text-2xl font-bold text-green">Your shop</h2>
+    <p class="text-sm text-ink-soft mt-1">Share this link with customers, or print the QR code.</p>
+    <input class="field copy-field mt-3" readonly value="{{ storefront_url }}" aria-label="Storefront URL" onfocus="this.select()">
+    <a class="btn btn-primary mt-3" href="/s/{{ shop.slug }}">Open your shop</a>
+  </div>
+  <img src="/s/{{ shop.slug }}/qr.svg" alt="QR code linking to your shop" width="160" height="160" class="rounded-lg bg-white border border-line mx-auto">
+</section>
+
+<section class="card p-5 sm:p-6 mb-5">
+  <h2 class="text-2xl font-bold text-green">For AI agents</h2>
+  <p class="text-sm text-ink-soft mt-1">Add this URL as a custom connector in Claude.ai and an assistant can find your shop and place orders.</p>
+  <input class="field copy-field mt-3" readonly value="{{ mcp_url }}" aria-label="Agent (MCP) URL" onfocus="this.select()">
+</section>
+
+<section class="card p-5 sm:p-6 mb-5">
+  <h2 class="text-2xl font-bold text-green">Orders</h2>
+  <p class="text-sm text-ink-soft mt-1">Watch orders arrive and mark them ready for pickup.</p>
+  <a class="btn btn-ghost mt-3" href="{{ board_path }}">Open your order board</a>
+</section>
+{% endblock %}

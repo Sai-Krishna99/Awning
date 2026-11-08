@@ -1,0 +1,52 @@
+{
+  "items": [
+    {
+      "name": "Sourdough Loaf",
+      "price_cents": 850,
+      "options": []
+    },
+    {
+      "name": "Baguette",
+      "price_cents": 400,
+      "options": []
+    },
+    {
+      "name": "Rye Loaf",
+      "price_cents": 900,
+      "options": []
+    },
+    {
+      "name": "Focaccia Slab",
+      "price_cents": 1200,
+      "options": [
+        "Half",
+        "Whole"
+      ]
+    },
+    {
+      "name": "Almond Croissant",
+      "price_cents": 450,
+      "options": []
+    },
+    {
+      "name": "Pain au Chocolat",
+      "price_cents": 425,
+      "options": []
+    },
+    {
+      "name": "Cinnamon Roll",
+      "price_cents": 500,
+      "options": []
+    },
+    {
+      "name": "Lemon Tart",
+      "price_cents": 550,
+      "options": []
+    },
+    {
+      "name": "Brownie",
+      "price_cents": 350,
+      "options": []
+    }
+  ]
+}

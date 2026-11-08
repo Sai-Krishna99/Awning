@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Payment not completed | {{ shop.name }}{% endblock %}
+{% block content %}
+<section class="card p-6 sm:p-8">
+  {% if order.status == "awaiting_payment" and order.approval_url %}
+  <p class="text-sm font-semibold uppercase tracking-wide text-terracotta-deep">Nothing was charged</p>
+  <h1 class="mt-2 text-3xl font-bold text-green">Payment not completed</h1>
+  <p class="mt-3 text-ink-soft">You left PayPal before finishing. Your order from {{ shop.name }} is still saved: {{ order.lines | length }} item{{ "s" if order.lines | length != 1 }}, ${{ order.total_cents | money }}.</p>
+  <div class="mt-6 flex flex-col sm:flex-row gap-3">
+    <a class="btn btn-accent" href="{{ order.approval_url }}">Try paying again</a>
+    <a class="btn btn-ghost" href="/s/{{ shop.slug }}">Back to {{ shop.name }}</a>
+  </div>
+  {% else %}
+  <h1 class="text-3xl font-bold text-green">Payment not completed</h1>
+  <p class="mt-3 text-ink-soft">This order has already moved on, so there is nothing left to pay.</p>
+  <a class="btn btn-primary mt-6" href="/o/{{ order.id }}">View order status</a>
+  {% endif %}
+</section>
+{% endblock %}

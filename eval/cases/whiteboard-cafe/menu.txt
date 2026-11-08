@@ -1,0 +1,14 @@
+COFFEE
+Drip Coffee: Small $2.75 / Large $3.75
+Americano $3.50
+Latte: Small $4.50 / Large $5.50
+Cappuccino $4.50
+Cold Brew $5.00
+
+BITES
+Butter Croissant $3.75
+Blueberry Muffin $3.50
+Avocado Toast $9.00
+Egg Sandwich $8.50
+
+Add oat milk +0.75

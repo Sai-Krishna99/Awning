@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Shop directory | Awning{% endblock %}
+{% block description %}Every shop on Awning that people and AI agents can order from.{% endblock %}
+{% block content %}
+<section class="mb-8">
+  <h1 class="text-4xl sm:text-5xl font-bold text-green leading-tight">Shop directory</h1>
+  <p class="mt-3 text-lg text-ink-soft">Every published shop. People can order on the web; AI agents find them through <a class="underline text-green" href="/connect">the connector</a>.</p>
+</section>
+{% if shops %}
+<div class="grid gap-4 sm:grid-cols-2">
+  {% for shop in shops %}{% include "_shop_card.html" %}{% endfor %}
+</div>
+{% else %}
+<div class="card p-8 text-center">
+  <p class="font-display text-2xl font-bold text-green">No shops yet</p>
+  <p class="mt-2 text-ink-soft">Be the first. It takes a photo of your menu.</p>
+  <a href="/start" class="btn btn-primary mt-4">Turn your menu into a shop</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+PANES
+Concha $2.50
+Cuernito $3.00
+Bolillo $1.50
+Empanada de Pina $3.25
+
+BEBIDAS
+Cafe de Olla: Chico $3.00 / Grande $4.00
+Chocolate Caliente $4.50
+Agua de Jamaica $3.50
+
+PASTELES
+Pastel de Tres Leches $6.00
+Flan $5.00
+Churros: Media Orden $5.50 / Orden Completa $8.50
