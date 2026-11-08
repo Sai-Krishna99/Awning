@@ -29,7 +29,7 @@ Narration: "Three people are involved. The shopper adds Awning to their AI once,
 | Shot | Narration |
 |---|---|
 | `/start`, upload Rosa's menu image. On-screen label: "Menu image: AI-generated for this demo". | "Rosa runs a taco stand. Here's her handwritten menu. For this demo the image is AI-generated. She uploads it." |
-| Extraction, then the AG Grid review with highlighted rows; confirm one. | "Claude reads the items, prices and options. Anything it isn't sure about is highlighted, and she can't publish until she checks it." |
+| Extraction, then the AG Grid review (rows flagged by the model are highlighted; this menu had none). | "Claude reads the items, prices and options. Anything it isn't sure about gets highlighted for her to check before she can publish. This menu came through clean." |
 | Connect with PayPal, sandbox login (password field only, never the value), back to review showing Connected. | "To get paid, she connects PayPal by logging in. Awning never sees her password. PayPal tells us which account to pay." |
 | Publish; published page with storefront link, QR code, assistant link and board link. | "She publishes, and gets a storefront, a QR code, a link for AI assistants, and a live order board." |
 
