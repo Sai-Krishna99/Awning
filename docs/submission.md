@@ -67,7 +67,7 @@ Paste or adapt the README section "How Awning meets the judging criteria" (Techn
 - [x] Hosted app URL: https://awning-o5t9.onrender.com
 - [x] Public repo URL: https://github.com/Sai-Krishna99/Awning (MIT license shows in About)
 - [ ] Testing instructions with sandbox buyer login: TODO(deploy): paste README "Try it" section with credentials
-- [ ] Screenshots: TODO(deploy): review grid, Claude.ai order, PayPal approval, board
+- [x] Screenshots: [docs/screenshots/](screenshots/) (Claude.ai order card before and after payment, review grid, published page, merchant board)
 - [ ] Architecture diagram image (optional): render docs/architecture.md
 - [ ] Hosted demo stays up and free to use until judging ends (Dec 15, 08:00 PT)
 - [ ] Submit before Thu 12:00 PM PT
