@@ -59,7 +59,7 @@ No setup is needed for the first two options.
 2. **Watch an agent buy.** Open `/try` and ask for something from Maria's Cart. The agent searches, reads the menu and returns an approval link.
 3. **Use your own Claude.ai.** In Claude.ai: Customize, Connectors, Add custom connector, enter `https://awning-o5t9.onrender.com/mcp`, set Authentication to "No sign-in", Add. In a chat, click **+**, Connectors, toggle Awning on. The first tool call asks for approval (Allow once or Always allow). The Free plan allows one custom connector. Then ask: "Order 2 lattes with oat milk from Maria's Cart for 9am pickup, name Sam."
 
-Also try making your own shop: upload any menu photo at `/start`. Leaving the payee blank sends money to the Awning demo account, so in-app refunds work from that shop's board.
+Also try making your own shop: upload any menu photo at `/start`, or one from [examples/menus/](examples/menus/). Leaving the payee blank sends money to the Awning demo account, so in-app refunds work from that shop's board.
 
 **Paying.** Approve payments with the sandbox buyer account: sb-sefe253794913@personal.example.com with password S1Tn3*kK. These are PayPal sandbox credentials only.
 
@@ -171,7 +171,7 @@ Two sandbox accounts receive money. Shops published with no payee pay the Awning
 The site footer says: "Sandbox demo: every payment is a real PayPal sandbox transaction. No real money moves."
 
 - Real: PayPal sandbox order creation and approval links produced by the app itself (storefront API and built-in demo agent, using the real Claude API); capture to a different merchant account, the 403 on third-party refunds and webhook delivery, verified with spike scripts ([docs/research/paypal.md](docs/research/paypal.md)); the Claude extraction, MCP server and SSE board code. On the hosted app on 2026-11-08, live sandbox payments went through end to end: storefront checkout and an order placed from Claude.ai through the custom connector, each captured once and received in the Maria's Cart sandbox merchant account.
-- Demo: Maria's Cart and its menu ([seed/marias-cart.json](seed/marias-cart.json)), and the sandbox accounts. No real money moves and no real business or user is represented. Awning has no users beyond the hackathon.
+- Demo: Maria's Cart and its menu ([examples/marias-cart/menu.json](examples/marias-cart/menu.json)), and the sandbox accounts. No real money moves and no real business or user is represented. Awning has no users beyond the hackathon.
 - Not claimed: PayPal Store Sync, Agent Ready or other PayPal merchant products. Awning uses the public Orders API only.
 
 ## Limitations
@@ -218,7 +218,7 @@ src/awning/
 eval/              extraction eval harness, cases, results
 tests/             pytest suite
 docs/              architecture, video script, submission, research
-seed/              fictional demo merchant
+examples/          fictional demo merchant and sample menus to upload
 render.yaml        Render deployment
 ```
 
