@@ -1,0 +1,55 @@
+{
+  "items": [
+    {
+      "name": "Turkey Club",
+      "price_cents": 1150,
+      "options": []
+    },
+    {
+      "name": "Caprese",
+      "price_cents": 1050,
+      "options": []
+    },
+    {
+      "name": "Italian Sub",
+      "price_cents": 1250,
+      "options": [
+        "6 inch",
+        "12 inch"
+      ]
+    },
+    {
+      "name": "Grilled Cheese",
+      "price_cents": 800,
+      "options": []
+    },
+    {
+      "name": "Tomato Soup",
+      "price_cents": 600,
+      "options": [
+        "Cup",
+        "Bowl"
+      ]
+    },
+    {
+      "name": "House Salad",
+      "price_cents": 850,
+      "options": []
+    },
+    {
+      "name": "Kettle Chips",
+      "price_cents": 250,
+      "options": []
+    },
+    {
+      "name": "Pickle",
+      "price_cents": 100,
+      "options": []
+    },
+    {
+      "name": "Cookie",
+      "price_cents": 300,
+      "options": []
+    }
+  ]
+}

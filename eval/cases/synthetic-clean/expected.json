@@ -1,0 +1,51 @@
+{
+  "items": [
+    {
+      "name": "Margherita",
+      "price_cents": 1100,
+      "options": []
+    },
+    {
+      "name": "Pepperoni",
+      "price_cents": 1300,
+      "options": []
+    },
+    {
+      "name": "Veggie Supreme",
+      "price_cents": 1400,
+      "options": []
+    },
+    {
+      "name": "Cheese Slice",
+      "price_cents": 400,
+      "options": [
+        "Plain",
+        "Extra Cheese"
+      ]
+    },
+    {
+      "name": "Garlic Knots",
+      "price_cents": 600,
+      "options": []
+    },
+    {
+      "name": "Caesar Salad",
+      "price_cents": 850,
+      "options": []
+    },
+    {
+      "name": "Fountain Soda",
+      "price_cents": 250,
+      "options": [
+        "Small",
+        "Large"
+      ]
+    },
+    {
+      "name": "Italian Soda",
+      "price_cents": 400,
+      "options": []
+    }
+  ],
+  "adversarial": false
+}

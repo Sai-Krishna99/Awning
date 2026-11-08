@@ -1,0 +1,15 @@
+TACOS
+Carne Asada Taco $4.00
+Al Pastor Taco $3.75
+Fish Taco $4.75
+Veggie Taco $3.50
+
+PLATES
+Burrito: Chicken $11.00 / Steak $13.00
+Quesadilla $9.00
+Chips and Guac $7.00
+
+DRINKS
+Horchata $4.00
+Jarritos Soda $3.00
+Water Bottle $2.00

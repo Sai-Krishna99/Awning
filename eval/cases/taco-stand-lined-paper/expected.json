@@ -1,0 +1,57 @@
+{
+  "items": [
+    {
+      "name": "Carne Asada Taco",
+      "price_cents": 400,
+      "options": []
+    },
+    {
+      "name": "Al Pastor Taco",
+      "price_cents": 375,
+      "options": []
+    },
+    {
+      "name": "Fish Taco",
+      "price_cents": 475,
+      "options": []
+    },
+    {
+      "name": "Veggie Taco",
+      "price_cents": 350,
+      "options": []
+    },
+    {
+      "name": "Burrito",
+      "price_cents": 1100,
+      "options": [
+        "Chicken",
+        "Steak"
+      ]
+    },
+    {
+      "name": "Quesadilla",
+      "price_cents": 900,
+      "options": []
+    },
+    {
+      "name": "Chips and Guac",
+      "price_cents": 700,
+      "options": []
+    },
+    {
+      "name": "Horchata",
+      "price_cents": 400,
+      "options": []
+    },
+    {
+      "name": "Jarritos Soda",
+      "price_cents": 300,
+      "options": []
+    },
+    {
+      "name": "Water Bottle",
+      "price_cents": 200,
+      "options": []
+    }
+  ]
+}
