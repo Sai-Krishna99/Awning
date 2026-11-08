@@ -134,6 +134,47 @@
   }
 
   let currentOrderId = null;
+  let cancelWatch = null;
+  let watchToken = 0;
+
+  function stopCancelWatch() {
+    watchToken += 1;
+    clearInterval(cancelWatch);
+    cancelWatch = null;
+  }
+
+  async function orderWasPaid(orderId) {
+    try {
+      const response = await fetch("/api/orders/" + encodeURIComponent(orderId));
+      if (!response.ok) return false;
+      const body = await response.json();
+      return body.status !== "awaiting_payment" || body.payment_held;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // PayPal can report a cancel even when the buyer approved in its window
+  // (e.g. after switching tabs), so check the order before saying it failed.
+  function watchCancelledOrder(orderId) {
+    stopCancelWatch();
+    const token = watchToken;
+    let checks = 0;
+    showError("Checking your payment with PayPal...");
+    const check = async () => {
+      checks += 1;
+      if (await orderWasPaid(orderId)) {
+        stopCancelWatch();
+        window.location.href = "/o/" + encodeURIComponent(orderId) + "?returned=1";
+        return;
+      }
+      if (token !== watchToken) return;
+      if (checks === 1) showError("Payment was not completed. Your cart is still here when you are ready.");
+      if (checks >= 20) stopCancelWatch();
+    };
+    cancelWatch = setInterval(check, 3000);
+    check();
+  }
   let buttonsRendered = false;
 
   function renderPayPalButtons() {
@@ -143,6 +184,7 @@
       .Buttons({
         style: { shape: "pill", color: "gold", label: "pay", layout: "vertical" },
         onClick: (data, actions) => {
+          stopCancelWatch();
           const problem = validate();
           if (problem) {
             showError(problem);
@@ -164,7 +206,7 @@
           }
           window.location.href = orderPath + "?returned=1";
         },
-        onCancel: () => showError("Payment was cancelled. Your order is still here when you are ready."),
+        onCancel: () => watchCancelledOrder(currentOrderId),
         onError: () => {
           if (!orderErrorShown) showError("PayPal ran into a problem. Please try again.");
         },
