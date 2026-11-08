@@ -30,6 +30,19 @@ Hackathon prototype on PayPal sandbox. Maria's Cart is a fictional merchant; eve
 
 **Why one shared connector.** One connector reaches every shop, so a shopper sets up once. One connector per shop would mean adding a connector for every food truck, which nobody would do. The shared directory is the part that grows in value with each shop, and it is the part PayPal would own.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Claude.ai order card, awaiting payment](docs/screenshots/03-claude-card-awaiting.png) | ![Claude.ai order card after paying in PayPal](docs/screenshots/04-claude-card-paid.png) |
+| Claude.ai with the Awning connector: the read-only order card right after Claude places the order. | The same card after the buyer approved the payment in PayPal. No pay button lives in the card. |
+| ![Review grid](docs/screenshots/02-review-grid.png) | ![Published page](docs/screenshots/05-published.png) |
+| The merchant checks what Claude read from the menu in an AG Grid table. The menu image is AI-generated for the demo. | After publishing: storefront link, QR code and the MCP URL for AI assistants. |
+
+![Merchant board](docs/screenshots/06-merchant-board.png)
+
+The merchant's live board with a paid order from the demo agent. All shops shown are fictional; every payment is a real PayPal sandbox transaction.
+
 ## How it works
 
 **Merchant**
