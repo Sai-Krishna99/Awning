@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Orders | {{ shop.name }} | Awning{% endblock %}
-{% block header_right %}{% endblock %}
+{% block header_right %}{% if read_only %}{{ super() }}{% endif %}{% endblock %}
 {% block head %}<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">{% endblock %}
 {% block content %}
 <section id="board" data-api="{{ api_base }}" data-shop="{{ shop.name }}"{% if read_only %} data-readonly="true"{% endif %}>
