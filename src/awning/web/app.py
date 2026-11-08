@@ -10,6 +10,7 @@ from awning.seed import DEFAULT_SEED_PATH, seed_demo_shop
 from awning.web.routes_agent import router as agent_router
 from awning.web.routes_board import router as board_router
 from awning.web.routes_merchant import router as merchant_router
+from awning.web.routes_pages import fallback_router
 from awning.web.routes_pages import router as pages_router
 from awning.web.routes_shop import WEB_DIR
 from awning.web.routes_shop import router as shop_router
@@ -47,6 +48,8 @@ def create_app(ctx: AppContext) -> FastAPI:
         app.include_router(router)
 
     app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
+    # Unknown GET paths get the HTML 404 page; other methods (POST /mcp) still reach the MCP mount.
+    app.include_router(fallback_router)
 
     # Catch-all mount: serves exactly /mcp and shadows anything registered after it, so keep LAST.
     app.mount("/", mcp_app)

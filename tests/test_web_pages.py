@@ -55,3 +55,52 @@ def test_mcp_still_served_alongside_pages(tmp_path):
     with client:
         assert client.get("/").status_code == 200
         assert client.post("/mcp", json=INIT, headers=HEADERS).status_code == 200
+
+
+BROWSER_ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+
+
+def test_browser_get_mcp_shows_explainer(tmp_path):
+    _, client = make_client(tmp_path)
+    with client:
+        response = client.get("/mcp", headers={"Accept": BROWSER_ACCEPT})
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/html")
+        assert "This is an MCP endpoint" in response.text
+        assert 'href="/connect"' in response.text
+        assert FOOTER in response.text
+        assert client.post("/mcp", json=INIT, headers=HEADERS).status_code == 200
+
+
+def test_sse_get_mcp_is_405(tmp_path):
+    _, client = make_client(tmp_path)
+    with client:
+        response = client.get("/mcp", headers={"Accept": "text/event-stream"})
+        assert response.status_code == 405
+        assert response.headers["allow"] == "POST"
+
+
+def test_favicon_is_svg_and_linked(tmp_path):
+    _, client = make_client(tmp_path)
+    response = client.get("/favicon.ico")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/svg+xml")
+    assert "<svg" in response.text
+    assert 'rel="icon" href="/favicon.ico"' in client.get("/").text
+
+
+def test_unknown_get_path_renders_404_page(tmp_path):
+    _, client = make_client(tmp_path)
+    with client:
+        response = client.get("/no-such-page")
+        assert response.status_code == 404
+        assert "We couldn't find that page" in response.text and FOOTER in response.text
+        assert client.get("/static/app.css").status_code == 200
+        assert client.post("/mcp", json=INIT, headers=HEADERS).status_code == 200
+
+
+def test_connect_lists_real_order_statuses(tmp_path):
+    _, client = make_client(tmp_path)
+    html = client.get("/connect").text
+    assert "cancelled" not in html
+    assert "awaiting payment, paid, ready, picked up or refunded" in html
