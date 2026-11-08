@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Watch an AI agent shop | Awning{% endblock %}
+{% block description %}Chat with Awning's built-in AI shopping agent. It finds a shop, reads the menu and places a PayPal sandbox order, and every tool call it makes is shown.{% endblock %}
+{% block header_right %}
+<button type="button" id="new-chat" class="btn btn-ghost new-chat-btn">New chat</button>
+{% endblock %}
+{% block content %}
+<section class="mb-5">
+  <p class="text-sm font-semibold uppercase tracking-wide text-terracotta">Demo agent</p>
+  <h1 class="mt-1 text-3xl sm:text-4xl font-bold text-green leading-tight">Watch an AI agent shop</h1>
+  <p class="mt-2 text-ink-soft">Ask Claude to find a shop, read the menu and place an order. It uses the same tools AI assistants get through Awning's connector, and every step shows below. Tap a step to see exactly what the agent sent and what Awning returned. The agent only sends item IDs; Awning prices the order.</p>
+</section>
+
+<div class="card chat-panel">
+  <div id="chat-log" class="chat-log" aria-live="polite" aria-label="Conversation">
+    <div id="chat-intro">
+      <p class="font-semibold">Try one of these</p>
+      <div class="mt-3 flex flex-col items-start gap-2">
+        {% for prompt in starters %}
+        <button type="button" class="chip prompt-chip" data-prompt="{{ prompt }}">{{ prompt }}</button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <form id="composer" class="composer" novalidate>
+    <label for="message" class="sr-only">Message to the shopping agent</label>
+    <input id="message" class="field" maxlength="2000" autocomplete="off" enterkeyhint="send" placeholder="Ask for a shop, a menu or an order">
+    <button type="submit" id="send" class="btn btn-primary">Send</button>
+  </form>
+</div>
+<p class="mt-3 text-sm text-ink-soft">Payments use the PayPal sandbox. Nothing is charged until you approve in PayPal.</p>
+{% endblock %}
+{% block scripts %}
+<script src="/static/agent.js"></script>
+{% endblock %}

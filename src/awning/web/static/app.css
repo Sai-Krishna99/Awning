@@ -104,3 +104,32 @@ h1, h2, h3, .font-display { font-family: "Fraunces", Georgia, serif; font-optica
 .badge-ai { background: #E7F0EA; color: var(--green-deep); border-color: var(--green); }
 .order-actions .btn { min-height: 44px; padding: .5rem 1rem; flex: 1; }
 @media (prefers-reduced-motion: reduce) { .order-card.flash { animation: none; background: #FFF1D6; } }
+
+.new-chat-btn { min-height: 40px; padding: .4rem 1rem; font-size: .9rem; }
+.chat-log { display: flex; flex-direction: column; gap: .75rem; padding: 1rem; min-height: 50vh; }
+.chat-log > * { scroll-margin-bottom: 6rem; }
+.prompt-chip { border-radius: 1rem; text-align: left; }
+.prompt-chip[disabled] { opacity: .5; cursor: not-allowed; }
+.msg { display: flex; }
+.msg-user { justify-content: flex-end; }
+.bubble { max-width: 85%; padding: .65rem .95rem; border-radius: 1.1rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bubble-user { background: var(--green); color: #fff; border-bottom-right-radius: .35rem; }
+.bubble-agent { background: var(--cream); border: 1px solid var(--line); border-bottom-left-radius: .35rem; }
+.bubble-error { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+.tool-chip { align-self: flex-start; max-width: 100%; border: 1.5px solid var(--line); border-radius: 1rem; background: #fff; font-size: .85rem; }
+.tool-chip summary { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; min-height: 40px; padding: .4rem .85rem; cursor: pointer; list-style: none; }
+.tool-chip summary::-webkit-details-marker { display: none; }
+.tool-chip summary:focus-visible { outline: 3px solid var(--terracotta); outline-offset: 2px; border-radius: 1rem; }
+.tool-chip[open] summary { border-bottom: 1px solid var(--line); }
+.tool-dot { flex: none; width: .6rem; height: .6rem; border-radius: 999px; background: var(--green); }
+.tool-chip.is-pending .tool-dot { background: var(--terracotta); }
+.tool-chip.is-error { border-color: #FECACA; }
+.tool-chip.is-error .tool-dot { background: #DC2626; }
+.tool-name { font-family: ui-monospace, monospace; font-weight: 600; color: var(--green-deep); }
+.tool-summary { color: var(--ink-soft); overflow-wrap: anywhere; }
+.tool-body { padding: .25rem .85rem .85rem; }
+.tool-label { margin-top: .6rem; font-size: .7rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft); }
+.tool-body pre { margin-top: .25rem; padding: .6rem .75rem; max-height: 18rem; overflow: auto; border-radius: .6rem; background: var(--cream); font-size: .75rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pay-card { padding: 1rem 1.1rem; border: 2px solid var(--terracotta); }
+.composer { position: sticky; bottom: 0; display: flex; gap: .5rem; padding: .75rem; background: #fff; border-top: 1px solid var(--line); border-radius: 0 0 1.25rem 1.25rem; }
+.composer .btn { flex: none; }

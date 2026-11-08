@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from anthropic import AsyncAnthropic
 
+from awning.agent import DemoAgent, SessionStore
 from awning.catalog import Catalog
 from awning.config import Settings
 from awning.db import Database
@@ -23,6 +24,10 @@ class AppContext:
     extractor: MenuExtractor
     upload_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(5, 3600))
     upload_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(200, 86400))
+    agent_sessions: SessionStore = field(default_factory=SessionStore)
+    agent_limiter_ip: RateLimiter = field(default_factory=lambda: RateLimiter(30, 3600))
+    agent_limiter_global: RateLimiter = field(default_factory=lambda: RateLimiter(1000, 86400))
+    agent: DemoAgent = field(init=False)
 
 
 def build_context(settings: Settings) -> AppContext:
@@ -42,7 +47,9 @@ def build_context(settings: Settings) -> AppContext:
     extractor = MenuExtractor(
         anthropic_client, settings.extraction_model, settings.extraction_effort
     )
-    return AppContext(
+    ctx = AppContext(
         settings=settings, db=db, catalog=catalog, paypal=paypal, events=events,
         orders=orders, extractor=extractor,
     )
+    ctx.agent = DemoAgent(anthropic_client, settings.agent_model, settings.agent_effort, ctx)
+    return ctx

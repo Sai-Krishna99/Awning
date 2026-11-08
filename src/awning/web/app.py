@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from awning.context import AppContext
 from awning.mcp_server import build_mcp, build_transport_security
 from awning.seed import DEFAULT_SEED_PATH, seed_demo_shop
+from awning.web.routes_agent import router as agent_router
 from awning.web.routes_board import router as board_router
 from awning.web.routes_merchant import router as merchant_router
 from awning.web.routes_shop import WEB_DIR
@@ -41,7 +42,7 @@ def create_app(ctx: AppContext) -> FastAPI:
     app = FastAPI(lifespan=lifespan)
     app.state.ctx = ctx
 
-    for router in (health_router, shop_router, merchant_router, board_router, webhooks_router):  # later tasks append routers here
+    for router in (health_router, shop_router, merchant_router, board_router, webhooks_router, agent_router):  # later tasks append routers here
         app.include_router(router)
 
     app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
