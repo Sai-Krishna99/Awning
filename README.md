@@ -163,16 +163,16 @@ Verified live against the PayPal sandbox ([docs/research/paypal.md](docs/researc
 
 ## AI details
 
-- **Models.** Extraction and the demo agent use Claude models configured by environment variable (`AWNING_EXTRACTION_MODEL`, `AWNING_AGENT_MODEL`, with `*_EFFORT`). The demo agent (`/try`) uses `claude-haiku-5-5`, chosen from the agent eval in [eval/agent_results.md](eval/agent_results.md): Haiku passed 9/9 at about $0.0016 per conversation. Extraction model: TODO(deploy): model chosen from the eval table. The code default is `claude-opus-5-5`.
-- **Eval.** Run `20261108T071645Z` at low effort. It currently covers two synthetic cases only (one clean, one adversarial). Six real-photo cases are listed as "awaiting photos" in [eval/results.md](eval/results.md), so these numbers are not yet evidence about messy real-world photos.
+- **Models.** Extraction and the demo agent use Claude models configured by environment variable (`AWNING_EXTRACTION_MODEL`, `AWNING_AGENT_MODEL`, with `*_EFFORT`). The demo agent (`/try`) uses `claude-haiku-5-5`, chosen from the agent eval in [eval/agent_results.md](eval/agent_results.md): Haiku passed 9/9 at about $0.0016 per conversation. Extraction uses `claude-opus-5-5`. All three models tied on the eval below, so we kept the largest: merchants and judges upload messy photos we have not tested, a wrong first read costs a merchant's trust, and about 3 cents per menu is still small. Sonnet is the cheaper fallback.
+- **Eval.** Run `20261108T230817Z` at low effort over three cases: two synthetic renders (one clean, one adversarial with injected instructions) and one AI-generated image of a handwritten menu on lined paper (Rosa's Taco Stand, labeled as AI-generated). None is a real photo. Six real-photo cases are listed as "awaiting photo" in [eval/results.md](eval/results.md), so these numbers are not yet evidence about messy real-world photos.
 
 | model | cases ok | item recall | price accuracy | injection obeyed | p50 latency | mean cost / extraction |
 |---|---|---|---|---|---|---|
-| claude-haiku-5-5 | 2/2 | 100% | 100% | 0/1 | 2.7s | $0.0007 |
-| claude-sonnet-5-5 | 2/2 | 100% | 100% | 0/1 | 4.1s | $0.0138 |
-| claude-opus-5-5 | 2/2 | 100% | 100% | 0/1 | 5.5s | $0.0279 |
+| claude-haiku-5-5 | 3/3 | 100% | 100% | 0/1 | 4.4s | $0.0009 |
+| claude-sonnet-5-5 | 3/3 | 100% | 100% | 0/1 | 3.9s | $0.0134 |
+| claude-opus-5-5 | 3/3 | 100% | 100% | 0/1 | 5.9s | $0.0282 |
 
-- **Unit cost.** One extraction per merchant onboarding. Measured on the synthetic cases: $0.0007 (Haiku 5.5), $0.0138 (Sonnet 5.5), $0.0279 (Opus 5.5). TODO(deploy): re-measure after real photos are added to the eval.
+- **Unit cost.** One extraction per merchant onboarding. Measured on the three eval cases: $0.0009 (Haiku 5.5), $0.0134 (Sonnet 5.5), $0.0282 (Opus 5.5). Uploads are resized to 1568 px on the long side, so a full-size phone photo adds roughly 1,700 input tokens over these cases: under a cent more on Opus.
 - **Agent orders cost the platform $0 in AI.** When a buyer's own assistant (for example Claude.ai) places an order, that assistant's reasoning runs on the buyer's account. Awning only serves tool calls. Only the built-in demo agent spends Awning's Anthropic credits, and it is rate limited.
 
 ## What's real vs demo
