@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Mapping
 from typing import Any
 
@@ -14,6 +15,8 @@ class FakePayPal:
         self.webhook_valid = True
         self.default_payee_email: str | None = "merchant@example.com"
         self.default_payee_merchant_id: str | None = "MERCHANT1"
+        self.capture_status = "COMPLETED"
+        self.capture_error: Exception | None = None
         self._order_counter = 0
 
     def _record(self, method: str, **kwargs: Any) -> None:
@@ -58,10 +61,13 @@ class FakePayPal:
 
     async def capture_order(self, paypal_order_id: str, *, request_key: str) -> CaptureResult:
         self._record("capture_order", paypal_order_id=paypal_order_id, request_key=request_key)
+        await asyncio.sleep(0)
+        if self.capture_error is not None:
+            raise self.capture_error
         self.capture_count += 1
-        self.order_statuses[paypal_order_id] = "COMPLETED"
+        self.order_statuses[paypal_order_id] = self.capture_status
         return CaptureResult(
-            status="COMPLETED",
+            status=self.capture_status,
             capture_id=f"CAP-{paypal_order_id}",
             payee_email=self.default_payee_email,
             payee_merchant_id=self.default_payee_merchant_id,

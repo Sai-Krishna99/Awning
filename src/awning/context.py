@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from awning.catalog import Catalog
 from awning.config import Settings
 from awning.db import Database
+from awning.events import EventBus
+from awning.orders import OrderService
 from awning.paypal import PayPalClient
 
 
@@ -12,6 +14,8 @@ class AppContext:
     db: Database
     catalog: Catalog
     paypal: PayPalClient
+    events: EventBus
+    orders: OrderService
 
 
 def build_context(settings: Settings) -> AppContext:
@@ -20,4 +24,11 @@ def build_context(settings: Settings) -> AppContext:
     paypal = PayPalClient(
         settings.paypal_client_id, settings.paypal_client_secret, settings.paypal_base_url
     )
-    return AppContext(settings=settings, db=db, catalog=Catalog(db), paypal=paypal)
+    catalog = Catalog(db)
+    events = EventBus()
+    orders = OrderService(
+        db, catalog, paypal, events, settings.public_url, settings.third_party_refunds
+    )
+    return AppContext(
+        settings=settings, db=db, catalog=catalog, paypal=paypal, events=events, orders=orders
+    )
