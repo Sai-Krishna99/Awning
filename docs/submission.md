@@ -14,7 +14,7 @@ AI assistants are starting to shop for people, and big platforms are making thei
 
 **Merchant.** Takes a photo of the menu, checks what the AI read, connects their PayPal account and publishes. No website, no developer. Orders show up on their board with a sound, and the money lands in their PayPal account.
 
-**PayPal.** Awning is built to be a PayPal service. Its cost per merchant is one AI call to read the menu (about 3 cents on our largest model, on our test menus; real-photo numbers pending). The shopping conversation runs on the shopper's own AI. PayPal earns its usual fee on every payment.
+**PayPal.** Awning is built to be a PayPal service. Its cost per merchant is one AI call to read the menu (about 3 cents on our largest model, on our test menus; real-photo numbers pending). The shopping conversation runs on the shopper's own AI. PayPal earns its usual fee on every payment, so Awning can be free for merchants.
 
 Under the hood: Claude vision extracts items, prices and options, flagging anything uncertain. The merchant confirms flagged cells in an AG Grid review table and publishes. They get a mobile storefront with PayPal checkout, an MCP endpoint, a QR code, a directory listing and a live order board. Buyers can order from their own assistant (for example a Claude.ai custom connector), from a built-in demo agent, or on the storefront. Maria's Cart is a fictional demo merchant; every payment is a real PayPal sandbox transaction. The AI never pays on its own: the shopper always approves in PayPal.
 

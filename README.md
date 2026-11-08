@@ -10,7 +10,7 @@ Entry for the PayPal AI Hackathon 2026.
 |---|---|
 | Hosted demo | https://awning-o5t9.onrender.com |
 | Demo video | TODO(deploy): public YouTube URL |
-| Judge sandbox buyer login | JUDGE_BUYER_EMAIL_PLACEHOLDER / JUDGE_BUYER_PASSWORD_PLACEHOLDER (see [Try it](#try-it-for-judges)) |
+| Judge sandbox buyer login | sb-sefe253794913@personal.example.com / S1Tn3*kK (see [Try it](#try-it-for-judges)) |
 
 ## The problem
 
@@ -61,7 +61,7 @@ No setup is needed for the first two options.
 
 Also try making your own shop: upload any menu photo at `/start`. Leaving the payee blank sends money to the Awning demo account, so in-app refunds work from that shop's board.
 
-**Paying.** Approve payments with the sandbox buyer account: JUDGE_BUYER_EMAIL_PLACEHOLDER with password JUDGE_BUYER_PASSWORD_PLACEHOLDER. These are PayPal sandbox credentials only.
+**Paying.** Approve payments with the sandbox buyer account: sb-sefe253794913@personal.example.com with password S1Tn3*kK. These are PayPal sandbox credentials only.
 
 **What to expect.**
 
