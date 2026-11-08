@@ -3,7 +3,7 @@
 {% block head %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <section class="mb-6">
-  <p class="text-sm font-semibold text-terracotta uppercase tracking-wide">Step 2 of 3</p>
+  <p class="text-sm font-semibold text-terracotta-deep uppercase tracking-wide">Step 2 of 3</p>
   <h1 class="text-3xl sm:text-4xl font-bold text-green leading-tight">Check your menu</h1>
   <p class="mt-2 text-ink-soft">Tap any cell to edit it. Highlighted rows are ones we weren't sure about: fix them, then press <strong>Confirm</strong>.</p>
 </section>
@@ -43,7 +43,7 @@
 
   <fieldset class="grid gap-3 rounded-xl bg-cream p-4 border border-line">
     <legend class="px-1 text-sm font-semibold">Where should payments go?</legend>
-    <label class="block"><span class="text-sm font-medium">PayPal merchant ID <span class="text-terracotta font-semibold">(recommended)</span></span>
+    <label class="block"><span class="text-sm font-medium">PayPal merchant ID <span class="text-terracotta-deep font-semibold">(recommended)</span></span>
       <input class="field mt-1" name="payee_merchant_id" maxlength="20" autocomplete="off" value="{{ form.payee_merchant_id }}">
       <span class="block text-xs text-ink-soft mt-1">In PayPal it's the "Merchant account ID" under Account Settings → Business information. We check it before publishing.</span></label>
     <label class="block"><span class="text-sm font-medium">Or, PayPal email <span class="text-ink-soft font-normal">(if you can't find the ID)</span></span>

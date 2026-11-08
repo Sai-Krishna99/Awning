@@ -5,11 +5,11 @@
 {% set steps = ["paid", "ready", "picked_up"] %}
 <section id="order-root" data-order-id="{{ order.id }}" data-status="{{ order.status }}" data-held="{{ 'true' if held else 'false' }}" class="card p-6 sm:p-8">
   {% if held %}
-    <p class="text-sm font-semibold uppercase tracking-wide text-terracotta">Payment on hold</p>
+    <p class="text-sm font-semibold uppercase tracking-wide text-terracotta-deep">Payment on hold</p>
     <h1 class="mt-2 text-3xl font-bold text-green">Your payment is on hold</h1>
     <p class="mt-3 text-ink-soft">{{ held_message }} This page shows it as paid once they do.</p>
   {% elif waiting %}
-    <p class="text-sm font-semibold uppercase tracking-wide text-terracotta pulse">{{ status_label }}</p>
+    <p class="text-sm font-semibold uppercase tracking-wide text-terracotta-deep pulse">{{ status_label }}</p>
     {% if returned %}
     <h1 class="mt-2 text-3xl font-bold text-green">We're confirming your payment…</h1>
     <p class="mt-3 text-ink-soft">PayPal is still finishing up. This page updates on its own, so you can leave it open.</p>
@@ -21,7 +21,7 @@
     <a class="btn btn-accent mt-5 w-full sm:w-auto" href="{{ order.approval_url }}">Continue to PayPal</a>
     {% endif %}
   {% elif order.status == "refunded" %}
-    <p class="text-sm font-semibold uppercase tracking-wide text-terracotta">{{ status_label }}</p>
+    <p class="text-sm font-semibold uppercase tracking-wide text-terracotta-deep">{{ status_label }}</p>
     <h1 class="mt-2 text-3xl font-bold text-green">This order was refunded</h1>
     <p class="mt-3 text-ink-soft">The money is on its way back to your PayPal account.</p>
   {% else %}

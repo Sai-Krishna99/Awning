@@ -30,8 +30,27 @@
     errorBox.classList.toggle("hidden", !message);
   }
 
+  function showSoundButton() {
+    soundButton.classList.remove("hidden");
+  }
+
+  // Phones suspend audio when the board is backgrounded; resolves true once audio can play again.
+  function resumeAudio() {
+    return audio.resume()
+      .then(function () { return audio.state === "running"; }, function () { return false; })
+      .then(function (running) {
+        if (!running) showSoundButton();
+        return running;
+      });
+  }
+
   function chime() {
-    if (!audio || audio.state !== "running") return;
+    if (!audio) return;
+    if (audio.state === "running") return play();
+    resumeAudio().then(function (running) { if (running) play(); });
+  }
+
+  function play() {
     const now = audio.currentTime;
     [660, 880].forEach(function (freq, i) {
       const osc = audio.createOscillator();
@@ -51,10 +70,14 @@
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (Ctx) {
       audio = audio || new Ctx();
-      audio.resume().then(chime);
+      resumeAudio().then(function (running) { if (running) play(); });
     }
     if (navigator.vibrate) navigator.vibrate(30);
     soundButton.classList.add("hidden");
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && audio && audio.state !== "running") resumeAudio();
   });
 
   async function act(order, path, button) {
@@ -89,7 +112,10 @@
   function actionButton(order, label, cls, path) {
     const button = el("button", "btn " + cls, label);
     button.type = "button";
-    button.addEventListener("click", function () { act(order, path, button); });
+    button.addEventListener("click", function () {
+      if (path.confirm && !window.confirm(path.confirm)) return;
+      act(order, path, button);
+    });
     return button;
   }
 
@@ -113,11 +139,13 @@
     });
     node.appendChild(items);
     if (order.note) node.appendChild(el("p", "mt-2 text-sm italic text-ink-soft", "Note: " + order.note));
-    node.appendChild(el("p", "mt-2 text-sm font-semibold" + (awaiting ? " text-ink-soft" : " text-terracotta"), STATUS[order.status] || order.status));
+    node.appendChild(el("p", "mt-2 text-sm font-semibold" + (awaiting ? " text-ink-soft" : " text-terracotta-deep"), STATUS[order.status] || order.status));
     const actions = el("div", "order-actions flex flex-wrap gap-2 mt-3");
     if (order.status === "paid") actions.appendChild(actionButton(order, "Ready", "btn-primary", { url: "/status", body: { status: "ready" } }));
     if (order.status === "ready") actions.appendChild(actionButton(order, "Picked up", "btn-primary", { url: "/status", body: { status: "picked_up" } }));
-    if (["paid", "ready", "picked_up"].indexOf(order.status) !== -1) actions.appendChild(actionButton(order, "Refund", "btn-ghost", { url: "/refund" }));
+    if (["paid", "ready", "picked_up"].indexOf(order.status) !== -1) actions.appendChild(actionButton(order, "Refund", "btn-ghost", {
+      url: "/refund", confirm: "Refund " + money(order.total_cents) + " to " + order.customer_name + "?",
+    }));
     if (actions.children.length) node.appendChild(actions);
     return node;
   }

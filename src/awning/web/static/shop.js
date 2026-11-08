@@ -48,7 +48,7 @@
       price.textContent = "$" + money(lineTotal);
       const remove = document.createElement("button");
       remove.type = "button";
-      remove.className = "text-sm text-terracotta underline min-h-[44px]";
+      remove.className = "text-sm text-terracotta-deep underline min-h-[44px]";
       remove.textContent = "Remove";
       remove.addEventListener("click", () => {
         cart.splice(index, 1);
@@ -93,7 +93,10 @@
     return null;
   }
 
+  let orderErrorShown = false;
+
   async function createOrder() {
+    orderErrorShown = false;
     const data = new FormData(form);
     const response = await fetch("/api/s/" + encodeURIComponent(config.slug) + "/orders", {
       method: "POST",
@@ -105,10 +108,11 @@
         note: data.get("note") || "",
       }),
     });
-    const body = await response.json();
+    const body = await response.json().catch(() => ({}));
     if (!response.ok) {
       const message = (body.error && body.error.message) || "Something went wrong. Please try again.";
       showError(message);
+      orderErrorShown = true;
       throw new Error(message);
     }
     return body;
@@ -152,13 +156,18 @@
           return order.paypal_order_id;
         },
         onApprove: async () => {
-          const response = await fetch("/api/orders/" + currentOrderId + "/capture", { method: "POST" });
-          const body = await response.json();
-          const suffix = response.ok && body.status !== "awaiting_payment" ? "" : "?returned=1";
-          window.location.href = "/o/" + currentOrderId + suffix;
+          const orderPath = "/o/" + encodeURIComponent(currentOrderId);
+          try {
+            await fetch("/api/orders/" + encodeURIComponent(currentOrderId) + "/capture", { method: "POST" });
+          } catch (err) {
+            /* the order page reconciles with PayPal */
+          }
+          window.location.href = orderPath + "?returned=1";
         },
         onCancel: () => showError("Payment was cancelled. Your order is still here when you are ready."),
-        onError: () => showError("PayPal ran into a problem. Please try again."),
+        onError: () => {
+          if (!orderErrorShown) showError("PayPal ran into a problem. Please try again.");
+        },
       })
       .render("#paypal-button");
   }
